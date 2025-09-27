@@ -193,11 +193,22 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
+    // Web版での中央配置とレスポンシブ対応
+    ...(Platform.OS === 'web' && {
+      maxWidth: 500,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   header: {
     alignItems: 'center',
     paddingTop: 40,
     paddingBottom: 32,
+    // Web版では上部パディングを調整
+    ...(Platform.OS === 'web' && {
+      paddingTop: 60,
+      paddingBottom: 40,
+    }),
   },
   logoContainer: {
     width: 80,
@@ -259,6 +270,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: colors.textMain,
+    // Web版では少しコンパクトに
+    ...(Platform.OS === 'web' && {
+      paddingVertical: 12,
+      fontSize: 15,
+    }),
   },
   forgotPasswordButton: {
     alignSelf: 'flex-end',
@@ -281,6 +297,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    // Web版では標準的なボタンサイズに
+    ...(Platform.OS === 'web' && {
+      paddingVertical: 14,
+      borderRadius: 8,
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+    }),
   },
   disabledButton: {
     opacity: 0.6,
@@ -320,6 +343,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    // Web版での調整
+    ...(Platform.OS === 'web' && {
+      paddingVertical: 14,
+      borderRadius: 8,
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+    }),
   },
   guestButtonText: {
     fontSize: 16,

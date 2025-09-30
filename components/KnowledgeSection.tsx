@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { BookOpen, Users, Baby } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
@@ -18,21 +19,21 @@ const knowledgeItems: KnowledgeItem[] = [
     icon: 'book',
     title: '一時預かりとは？',
     description: '基本的な仕組みと利用方法',
-    imageUrl: require('../assets/images/sample5.png'),
+    imageUrl: require('../assets/images/optimized/sample5.webp'),
   },
   {
     id: '2',
     icon: 'users',
     title: '予約のマナー',
     description: 'キャンセルルールと注意点',
-    imageUrl: require('../assets/images/sample6.png'),
+    imageUrl: require('../assets/images/optimized/sample6.webp'),
   },
   {
     id: '3',
     icon: 'baby',
     title: 'よくある質問',
     description: '困ったときのFAQ',
-    imageUrl: require('../assets/images/sample3.png'),
+    imageUrl: require('../assets/images/optimized/sample3.webp'),
   },
 ];
 
@@ -94,11 +95,15 @@ export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps)
               onPress={() => onItemPress?.(item.id)}
               activeOpacity={0.8}
             >
-              <ImageBackground
-                source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
-                style={styles.card}
-                imageStyle={styles.cardImage}
-              >
+              <View style={styles.card}>
+                <Image
+                  source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  transition={200}
+                  cachePolicy="memory-disk"
+                  priority="low"
+                />
                 <View style={styles.cardContent}>
                   <View style={styles.iconContainer}>
                     <Icon size={28} color="white" />
@@ -106,7 +111,7 @@ export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps)
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardDescription}>{item.description}</Text>
                 </View>
-              </ImageBackground>
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -138,9 +143,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 5,
-  },
-  cardImage: {
-    borderRadius: 16,
+    position: 'relative',
   },
   cardContent: {
     flex: 1,

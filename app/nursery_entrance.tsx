@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     color: facilityColors.primary,
   },
   section: {
-    paddingVertical: 40,
+    paddingVertical: 32,
   },
   sectionTitle: {
     fontSize: 24,

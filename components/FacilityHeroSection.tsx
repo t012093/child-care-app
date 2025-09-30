@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Building2, LogIn } from 'lucide-react-native';
 import { facilityColors } from '../constants/colors';
@@ -32,111 +33,81 @@ export default function FacilityHeroSection() {
   ];
 
   return (
-    <View style={containerStyle}>
-      <ImageBackground
-        source={require('../assets/images/sample1.png')}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-        imageStyle={{ opacity: 0.15 }}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Building2 size={48} color={facilityColors.primary} strokeWidth={2} />
-            </View>
+    <LinearGradient
+      colors={[facilityColors.background, facilityColors.accentSoft]}
+      style={containerStyle}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <View style={styles.content}>
+        <Text style={titleStyle}>保育施設向け管理システム</Text>
+        <Text style={subtitleStyle}>
+          施設情報の管理・予約受付を{'\n'}もっと簡単に、もっとスマートに
+        </Text>
 
-            <Text style={titleStyle}>保育施設向け管理システム</Text>
-            <Text style={subtitleStyle}>
-              施設情報の管理・予約受付を{'\n'}もっと簡単に、もっとスマートに
-            </Text>
+        <View style={ctaContainerStyle}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push('/facility-register' as any)}
+          >
+            <Building2 size={20} color="white" />
+            <Text style={styles.primaryButtonText}>新規登録</Text>
+          </TouchableOpacity>
 
-            <View style={ctaContainerStyle}>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={() => router.push('/facility-register' as any)}
-              >
-                <Building2 size={20} color="white" />
-                <Text style={styles.primaryButtonText}>新規登録</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => router.push('/facility-login' as any)}
-              >
-                <LogIn size={20} color={facilityColors.primary} />
-                <Text style={styles.secondaryButtonText}>ログイン</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => router.push('/facility-login' as any)}
+          >
+            <LogIn size={20} color={facilityColors.primary} />
+            <Text style={styles.secondaryButtonText}>ログイン</Text>
+          </TouchableOpacity>
         </View>
-      </ImageBackground>
-    </View>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 0,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
   },
   containerTablet: {
-    marginVertical: 0,
+    paddingVertical: 40,
   },
   containerDesktop: {
-    marginVertical: 0,
-  },
-  backgroundImage: {
-    minHeight: 400,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: facilityColors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 24,
+    paddingVertical: 48,
   },
   content: {
     maxWidth: 600,
     alignItems: 'center',
-  },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    backgroundColor: facilityColors.accentSoft,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: facilityColors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    alignSelf: 'center',
+    width: '100%',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: facilityColors.textMain,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   titleTablet: {
-    fontSize: 32,
+    fontSize: 28,
   },
   titleDesktop: {
-    fontSize: 36,
+    fontSize: 32,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
     color: facilityColors.textSub,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    lineHeight: 22,
+    marginBottom: 24,
   },
   subtitleTablet: {
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
   },
   ctaContainer: {
     width: '100%',
@@ -152,18 +123,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: facilityColors.accent,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 10,
     gap: 8,
     shadowColor: facilityColors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: 'white',
   },
@@ -171,16 +142,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    backgroundColor: facilityColors.surface,
     borderWidth: 2,
     borderColor: facilityColors.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 10,
     gap: 8,
   },
   secondaryButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: facilityColors.primary,
   },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeroSection from '../../components/HeroSection';
@@ -7,12 +7,14 @@ import NotificationCard from '../../components/NotificationCard';
 import ColumnSection from '../../components/ColumnSection';
 import KnowledgeSection from '../../components/KnowledgeSection';
 import NearbyCarousel from '../../components/NearbyCarousel';
+import { HomeSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { horizontalPadding, isDesktop } = useResponsive();
+  const [isLoading, setIsLoading] = useState(true);
 
   // In a real app, we would fetch this from a user profile
   const lastName = '山田';
@@ -28,6 +30,15 @@ export default function HomeScreen() {
     type: '一時預かり',
   };
 
+  useEffect(() => {
+    // Simulate initial data loading and image preloading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const sectionHeaderStyle = [
     styles.sectionHeader,
     {
@@ -40,6 +51,14 @@ export default function HomeScreen() {
       width: '100%',
     },
   ];
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <HomeSkeleton />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

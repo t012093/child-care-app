@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { Clock } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
@@ -20,7 +21,7 @@ const sampleColumns: ColumnItem[] = [
     category: '基本知識',
     date: '2025-09-28',
     readTime: '3分',
-    imageUrl: require('../assets/images/sample3.png'),
+    imageUrl: require('../assets/images/optimized/sample3.webp'),
   },
   {
     id: '2',
@@ -28,7 +29,7 @@ const sampleColumns: ColumnItem[] = [
     category: '保活の進め方',
     date: '2025-09-25',
     readTime: '5分',
-    imageUrl: require('../assets/images/sample1.png'),
+    imageUrl: require('../assets/images/optimized/sample1.webp'),
   },
   {
     id: '3',
@@ -36,7 +37,7 @@ const sampleColumns: ColumnItem[] = [
     category: '予約のマナー',
     date: '2025-09-22',
     readTime: '2分',
-    imageUrl: require('../assets/images/sample2.png'),
+    imageUrl: require('../assets/images/optimized/sample2.webp'),
   },
 ];
 
@@ -89,15 +90,19 @@ export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSe
             onPress={() => onColumnPress?.(column.id)}
             activeOpacity={0.8}
           >
-            <ImageBackground
-              source={typeof column.imageUrl === 'string' ? { uri: column.imageUrl } : column.imageUrl}
-              style={styles.columnImage}
-              imageStyle={styles.columnImageStyle}
-            >
+            <View style={styles.columnImageContainer}>
+              <Image
+                source={typeof column.imageUrl === 'string' ? { uri: column.imageUrl } : column.imageUrl}
+                style={styles.columnImage}
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
+                priority="normal"
+              />
               <View style={styles.categoryBadge}>
                 <Text style={styles.categoryText}>{column.category}</Text>
               </View>
-            </ImageBackground>
+            </View>
 
             <View style={styles.columnContent}>
               <Text style={styles.columnTitle} numberOfLines={2}>
@@ -151,22 +156,24 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
-  columnImage: {
+  columnImageContainer: {
     width: '100%',
     height: 160,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    padding: 12,
+    position: 'relative',
   },
-  columnImageStyle: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+  columnImage: {
+    width: '100%',
+    height: '100%',
   },
   categoryBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
     backgroundColor: colors.accent,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    zIndex: 1,
   },
   categoryText: {
     fontSize: 12,

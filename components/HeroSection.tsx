@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { Search, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
@@ -54,12 +55,15 @@ export default function HeroSection() {
 
   return (
     <View style={containerStyle}>
-      <ImageBackground
-        source={require('../assets/images/hero.png')}
-        style={backgroundImageStyle}
-        resizeMode="cover"
-        imageStyle={{ resizeMode: 'cover', alignSelf: 'center' }}
-      >
+      <View style={backgroundImageStyle}>
+        <Image
+          source={require('../assets/images/optimized/hero.webp')}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={300}
+          priority="high"
+          cachePolicy="memory-disk"
+        />
         {/* キャッチコピー - タブレット以上では左側に表示 */}
         {isTablet && (
           <View style={styles.catchSectionTablet}>
@@ -109,7 +113,7 @@ export default function HeroSection() {
               </TouchableOpacity>
             </View>
           </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
@@ -126,6 +130,7 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     height: 400,
+    overflow: 'hidden',
   },
   backgroundImageTablet: {
     height: 450,

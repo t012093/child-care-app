@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
@@ -13,11 +14,19 @@ export default function FacilityCard({ facility }: FacilityCardProps) {
   const router = useRouter();
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.container}
       onPress={() => router.push(`/facility/${facility.id}`)}
     >
-      <Image source={{ uri: facility.imageUrl }} style={styles.image} />
+      <Image
+        source={{ uri: facility.imageUrl }}
+        style={styles.image}
+        contentFit="cover"
+        transition={200}
+        cachePolicy="memory-disk"
+        placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+        priority="low"
+      />
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>{facility.name}</Text>
         <View style={styles.ratingContainer}>
@@ -45,8 +54,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 100,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
   },
   content: {
     padding: 12,

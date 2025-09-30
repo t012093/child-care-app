@@ -32,19 +32,7 @@ export default function FacilityLoginScreen() {
     try {
       // TODO: 実際のAPI呼び出し
       await new Promise(resolve => setTimeout(resolve, 1500));
-      Alert.alert(
-        'ログイン成功',
-        '施設管理画面へ移動します。',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // TODO: 施設管理ダッシュボードへ遷移
-              console.log('Navigate to facility dashboard');
-            },
-          },
-        ]
-      );
+      router.push('/(facility-tabs)/dashboard' as any);
     } catch (error) {
       Alert.alert('ログインエラー', 'メールアドレスまたはパスワードが正しくありません。');
     } finally {
@@ -74,6 +62,19 @@ export default function FacilityLoginScreen() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    try {
+      // ゲストログインのシミュレーション
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      router.push('/(facility-tabs)/dashboard' as any);
+    } catch (error) {
+      Alert.alert('ログインエラー', 'ゲストログインに失敗しました。');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -181,6 +182,14 @@ export default function FacilityLoginScreen() {
               >
                 <Building2 size={20} color={facilityColors.primary} />
                 <Text style={styles.registerButtonText}>新規施設登録</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.guestButton}
+                onPress={handleGuestLogin}
+                disabled={isLoading}
+              >
+                <Text style={styles.guestButtonText}>ゲストとしてログイン（開発用）</Text>
               </TouchableOpacity>
             </View>
 
@@ -379,6 +388,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: facilityColors.primary,
     marginLeft: 8,
+  },
+  guestButton: {
+    backgroundColor: facilityColors.background,
+    borderWidth: 1,
+    borderColor: facilityColors.textSub,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    // Web版での調整
+    ...(Platform.OS === 'web' && {
+      paddingVertical: 10,
+      borderRadius: 8,
+    }),
+  },
+  guestButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: facilityColors.textSub,
   },
   footer: {
     alignItems: 'center',

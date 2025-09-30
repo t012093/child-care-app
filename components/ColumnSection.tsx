@@ -20,7 +20,7 @@ const sampleColumns: ColumnItem[] = [
     category: '基本知識',
     date: '2025-09-28',
     readTime: '3分',
-    imageUrl: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&q=80',
+    imageUrl: require('../assets/images/sample3.png'),
   },
   {
     id: '2',

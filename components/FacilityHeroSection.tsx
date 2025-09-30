@@ -34,7 +34,7 @@ export default function FacilityHeroSection() {
   return (
     <View style={containerStyle}>
       <ImageBackground
-        source={require('../assets/images/hero.png')}
+        source={require('../assets/images/sample1.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
         imageStyle={{ opacity: 0.15 }}

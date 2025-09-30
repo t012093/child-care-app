@@ -116,13 +116,13 @@ export default function HeroSection() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 16,
+    marginBottom: 16,
   },
   containerTablet: {
-    marginVertical: 20,
+    marginBottom: 20,
   },
   containerDesktop: {
-    marginVertical: 24,
+    marginBottom: 24,
   },
   backgroundImage: {
     height: 400,
@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 248, 230, 0.3)',
     borderRadius: 0,
     padding: 16,
+    paddingTop: 0,
     alignItems: 'center',
   },
   searchSectionTablet: {

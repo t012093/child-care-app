@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BookOpen, Users, Baby } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
@@ -10,8 +9,7 @@ interface KnowledgeItem {
   icon: 'book' | 'users' | 'baby';
   title: string;
   description: string;
-  imageUrl: string;
-  gradientColors: string[];
+  imageUrl: string | number;
 }
 
 const knowledgeItems: KnowledgeItem[] = [
@@ -20,24 +18,21 @@ const knowledgeItems: KnowledgeItem[] = [
     icon: 'book',
     title: '一時預かりとは？',
     description: '基本的な仕組みと利用方法',
-    imageUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&q=80',
-    gradientColors: ['rgba(126, 87, 194, 0.85)', 'rgba(98, 60, 167, 0.85)'],
+    imageUrl: require('../assets/images/sample5.png'),
   },
   {
     id: '2',
     icon: 'users',
     title: '予約のマナー',
     description: 'キャンセルルールと注意点',
-    imageUrl: 'https://images.unsplash.com/photo-1560421683-6856ea585c78?w=400&q=80',
-    gradientColors: ['rgba(78, 205, 196, 0.85)', 'rgba(52, 172, 164, 0.85)'],
+    imageUrl: require('../assets/images/sample6.png'),
   },
   {
     id: '3',
     icon: 'baby',
     title: 'よくある質問',
     description: '困ったときのFAQ',
-    imageUrl: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?w=400&q=80',
-    gradientColors: ['rgba(255, 184, 77, 0.85)', 'rgba(255, 138, 101, 0.85)'],
+    imageUrl: require('../assets/images/sample3.png'),
   },
 ];
 
@@ -100,20 +95,17 @@ export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps)
               activeOpacity={0.8}
             >
               <ImageBackground
-                source={{ uri: item.imageUrl }}
+                source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
                 style={styles.card}
                 imageStyle={styles.cardImage}
               >
-                <LinearGradient
-                  colors={item.gradientColors}
-                  style={styles.cardGradient}
-                >
+                <View style={styles.cardContent}>
                   <View style={styles.iconContainer}>
                     <Icon size={28} color="white" />
                   </View>
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardDescription}>{item.description}</Text>
-                </LinearGradient>
+                </View>
               </ImageBackground>
             </TouchableOpacity>
           );
@@ -150,7 +142,7 @@ const styles = StyleSheet.create({
   cardImage: {
     borderRadius: 16,
   },
-  cardGradient: {
+  cardContent: {
     flex: 1,
     padding: 16,
     justifyContent: 'flex-end',

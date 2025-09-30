@@ -58,6 +58,7 @@ export default function HeroSection() {
         source={require('../assets/images/hero.png')}
         style={backgroundImageStyle}
         resizeMode="cover"
+        imageStyle={{ resizeMode: 'cover', alignSelf: 'center' }}
       >
         {/* キャッチコピー - タブレット以上では左側に表示 */}
         {isTablet && (
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'rgba(255, 248, 230, 0.3)',
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 0,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
   catchSectionTablet: {
     position: 'absolute',
     top: 80,
-    left: 60,
+    left: 100,
     zIndex: 10,
   },
   catchTitle: {
@@ -180,14 +181,14 @@ const styles = StyleSheet.create({
   },
   searchSection: {
     width: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'rgba(255, 248, 230, 0.3)',
     borderRadius: 0,
     padding: 16,
     alignItems: 'center',
   },
   searchSectionTablet: {
     position: 'absolute',
-    left: 60,
+    left: 100,
     bottom: 60,
     width: 320,
     height: 190,
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchSectionDesktop: {
-    left: 60,
+    left: 100,
     bottom: 60,
     width: 320,
     height: 190,

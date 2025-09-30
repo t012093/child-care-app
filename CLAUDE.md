@@ -20,11 +20,11 @@
 
 ### 1. 機能開発の基本サイクル
 ```bash
-# 1. Web版での動作確認
+# 1. Web版での動作確認（推奨）
 npm run web  # http://localhost:8081
 
 # 2. モバイル版での動作確認
-npm run iphone  # Expo Go経由
+npm run iphone  # Expo Go経由（SDK 54対応済み）
 
 # 3. 品質チェック
 npm run lint
@@ -119,16 +119,19 @@ npm run build:web
 ## 技術仕様
 
 ### 使用ライブラリ
-- **Expo SDK 53**: マルチプラットフォーム基盤
-- **React Native 0.79.5**: UIコンポーネント
-- **Expo Router 5.1.5**: ファイルベースルーティング
+- **Expo SDK 54**: マルチプラットフォーム基盤
+- **React Native 0.81.4**: UIコンポーネント
+- **Expo Router 6.0.8**: ファイルベースルーティング
 - **Supabase**: 認証・データベース
-- **TypeScript 5.8.3**: 型安全性
+- **TypeScript 5.9.2**: 型安全性
 
-### パッケージアップデート推奨
+### パッケージアップデート
 ```bash
-# 現在の警告対応
-npx expo update
+# SDK 54互換バージョンに自動調整
+npx expo install --fix
+
+# 特定パッケージの更新
+npx expo install <package-name>
 ```
 
 ## デプロイ戦略

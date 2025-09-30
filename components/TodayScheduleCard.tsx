@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react-native';
 import { colors } from '../constants/colors';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface Reservation {
   id: string;
@@ -22,9 +23,24 @@ export default function TodayScheduleCard({
   childName = '太郎くん',
   onPress
 }: TodayScheduleCardProps) {
+  const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
+
+  const containerStyle = [
+    styles.container,
+    {
+      marginHorizontal: horizontalPadding,
+      marginBottom: isDesktop ? 32 : 16,
+    },
+    isDesktop && {
+      alignSelf: 'center',
+      maxWidth: maxContentWidth,
+      width: '100%',
+    },
+  ];
+
   if (!reservation) {
     return (
-      <View style={styles.container}>
+      <View style={containerStyle}>
         <View style={styles.header}>
           <Calendar size={20} color={colors.accent} />
           <Text style={styles.headerTitle}>今日の予定</Text>
@@ -36,7 +52,7 @@ export default function TodayScheduleCard({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={containerStyle}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -71,8 +87,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

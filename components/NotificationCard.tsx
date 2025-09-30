@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Bell, MessageCircle, Calendar } from 'lucide-react-native';
 import { colors } from '../constants/colors';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface Notification {
   id: string;
@@ -62,14 +63,28 @@ export default function NotificationCard({
   onNotificationPress,
   onSeeAllPress,
 }: NotificationCardProps) {
+  const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
   const unreadCount = sampleNotifications.filter((n) => n.isUnread).length;
 
   if (sampleNotifications.length === 0) {
     return null;
   }
 
+  const containerStyle = [
+    styles.container,
+    {
+      marginHorizontal: horizontalPadding,
+      marginBottom: isDesktop ? 32 : 16,
+    },
+    isDesktop && {
+      alignSelf: 'center',
+      maxWidth: maxContentWidth,
+      width: '100%',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Bell size={20} color={colors.accent} />
@@ -125,8 +140,6 @@ export default function NotificationCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginBottom: 16,
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,

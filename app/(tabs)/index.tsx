@@ -1,17 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeroSection from '../../components/HeroSection';
 import TodayScheduleCard from '../../components/TodayScheduleCard';
 import NotificationCard from '../../components/NotificationCard';
 import ColumnSection from '../../components/ColumnSection';
 import KnowledgeSection from '../../components/KnowledgeSection';
-import CommunityReviewCard from '../../components/CommunityReviewCard';
 import NearbyCarousel from '../../components/NearbyCarousel';
 import { colors } from '../../constants/colors';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { horizontalPadding, isDesktop } = useResponsive();
+
   // In a real app, we would fetch this from a user profile
   const lastName = '山田';
   const childName = '太郎くん';
@@ -25,6 +27,19 @@ export default function HomeScreen() {
     date: '2025-10-01',
     type: '一時預かり',
   };
+
+  const sectionHeaderStyle = [
+    styles.sectionHeader,
+    {
+      paddingHorizontal: horizontalPadding,
+      paddingTop: isDesktop ? 32 : 24,
+    },
+    isDesktop && {
+      maxWidth: 1024,
+      alignSelf: 'center',
+      width: '100%',
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,12 +66,7 @@ export default function HomeScreen() {
           onItemPress={(id) => console.log('Knowledge item pressed:', id)}
         />
 
-        <CommunityReviewCard
-          onReviewPress={(id) => console.log('Review pressed:', id)}
-          onSeeAllPress={() => router.push('/(tabs)/board')}
-        />
-
-        <View style={styles.sectionHeader}>
+        <View style={sectionHeaderStyle}>
           <Text style={styles.sectionTitle}>近くの人気施設</Text>
         </View>
 
@@ -74,8 +84,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   sectionHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
     paddingBottom: 12,
   },
   sectionTitle: {

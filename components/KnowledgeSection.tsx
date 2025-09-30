@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookOpen, Users, Baby } from 'lucide-react-native';
 import { colors } from '../constants/colors';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface KnowledgeItem {
   id: string;
@@ -58,15 +59,37 @@ interface KnowledgeSectionProps {
 }
 
 export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps) {
+  const { horizontalPadding, isDesktop } = useResponsive();
+
+  const containerStyle = [
+    styles.container,
+    {
+      marginBottom: isDesktop ? 32 : 16,
+    },
+    isDesktop && {
+      maxWidth: 1024,
+      alignSelf: 'center',
+      width: '100%',
+    },
+  ];
+
+  const headerStyle = {
+    paddingHorizontal: horizontalPadding,
+  };
+
+  const scrollContentStyle = {
+    paddingHorizontal: horizontalPadding,
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={containerStyle}>
+      <View style={[styles.header, headerStyle]}>
         <Text style={styles.headerTitle}>はじめての方へ 📚</Text>
       </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
       >
         {knowledgeItems.map((item) => {
           const Icon = getIcon(item.icon);
@@ -103,19 +126,14 @@ export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps)
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
-    marginBottom: 16,
   },
   header: {
-    paddingHorizontal: 16,
     marginBottom: 12,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.textMain,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
   },
   card: {
     width: 200,

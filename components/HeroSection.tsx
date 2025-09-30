@@ -3,10 +3,12 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, P
 import { Search, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
+import { useResponsive } from '../hooks/useResponsive';
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
+  const { isTablet, isDesktop } = useResponsive();
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -20,26 +22,55 @@ export default function HeroSection() {
     router.push('/reserve?location=current');
   };
 
+  const containerStyle = [
+    styles.container,
+    isTablet && styles.containerTablet,
+    isDesktop && styles.containerDesktop,
+  ];
+
+  const backgroundImageStyle = [
+    styles.backgroundImage,
+    isTablet && styles.backgroundImageTablet,
+    isDesktop && styles.backgroundImageDesktop,
+  ];
+
+  const catchTitleStyle = [
+    styles.catchTitle,
+    isTablet && styles.catchTitleTablet,
+    isDesktop && styles.catchTitleDesktop,
+  ];
+
+  const catchSubtitleStyle = [
+    styles.catchSubtitle,
+    isTablet && styles.catchSubtitleTablet,
+    isDesktop && styles.catchSubtitleDesktop,
+  ];
+
+  const searchSectionStyle = [
+    styles.searchSection,
+    isDesktop && styles.searchSectionDesktop,
+  ];
+
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <ImageBackground
         source={{
           uri: 'https://images.pexels.com/photos/1094763/pexels-photo-1094763.jpeg?auto=compress&cs=tinysrgb&w=1200'
         }}
-        style={styles.backgroundImage}
+        style={backgroundImageStyle}
         resizeMode="cover"
       >
         <View style={styles.overlay}>
           <View style={styles.content}>
             {/* キャッチコピー */}
             <View style={styles.catchSection}>
-              <Text style={styles.catchTitle}>ほいポチで</Text>
-              <Text style={styles.catchSubtitle}>「園探し」をより簡単により</Text>
-              <Text style={styles.catchSubtitle}>スマートに</Text>
+              <Text style={catchTitleStyle}>ほいポチで</Text>
+              <Text style={catchSubtitleStyle}>「園探し」をより簡単により</Text>
+              <Text style={catchSubtitleStyle}>スマートに</Text>
             </View>
 
             {/* 検索セクション */}
-            <View style={styles.searchSection}>
+            <View style={searchSectionStyle}>
               <Text style={styles.searchTitle}>保育施設を検索する</Text>
               <View style={styles.searchInputContainer}>
                 <TextInput
@@ -77,17 +108,21 @@ export default function HeroSection() {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 16,
-    // Web版での調整
-    ...(Platform.OS === 'web' && {
-      marginVertical: 20,
-    }),
+  },
+  containerTablet: {
+    marginVertical: 20,
+  },
+  containerDesktop: {
+    marginVertical: 24,
   },
   backgroundImage: {
     height: 400,
-    // Web版での高さ調整
-    ...(Platform.OS === 'web' && {
-      height: 450,
-    }),
+  },
+  backgroundImageTablet: {
+    height: 450,
+  },
+  backgroundImageDesktop: {
+    height: 500,
   },
   overlay: {
     flex: 1,
@@ -111,10 +146,12 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginBottom: 8,
-    // Web版での調整
-    ...(Platform.OS === 'web' && {
-      fontSize: 22,
-    }),
+  },
+  catchTitleTablet: {
+    fontSize: 22,
+  },
+  catchTitleDesktop: {
+    fontSize: 26,
   },
   catchSubtitle: {
     fontSize: 16,
@@ -122,11 +159,14 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     lineHeight: 24,
-    // Web版での調整
-    ...(Platform.OS === 'web' && {
-      fontSize: 18,
-      lineHeight: 28,
-    }),
+  },
+  catchSubtitleTablet: {
+    fontSize: 18,
+    lineHeight: 28,
+  },
+  catchSubtitleDesktop: {
+    fontSize: 20,
+    lineHeight: 32,
   },
   searchSection: {
     width: '100%',
@@ -134,11 +174,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
-    // Web版での調整
-    ...(Platform.OS === 'web' && {
-      padding: 32,
-      borderRadius: 12,
-    }),
+  },
+  searchSectionDesktop: {
+    padding: 40,
+    borderRadius: 12,
   },
   searchTitle: {
     fontSize: 18,

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Platform } from 'react-native';
 import { Clock } from 'lucide-react-native';
 import { colors } from '../constants/colors';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface ColumnItem {
   id: string;
@@ -45,9 +46,31 @@ interface ColumnSectionProps {
 }
 
 export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSectionProps) {
+  const { horizontalPadding, isDesktop } = useResponsive();
+
+  const containerStyle = [
+    styles.container,
+    {
+      marginBottom: isDesktop ? 32 : 16,
+    },
+    isDesktop && {
+      maxWidth: 1024,
+      alignSelf: 'center',
+      width: '100%',
+    },
+  ];
+
+  const headerStyle = {
+    paddingHorizontal: horizontalPadding,
+  };
+
+  const scrollContentStyle = {
+    paddingHorizontal: horizontalPadding,
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={containerStyle}>
+      <View style={[styles.header, headerStyle]}>
         <Text style={styles.headerTitle}>おすすめコラム 📝</Text>
         <TouchableOpacity onPress={onSeeAllPress}>
           <Text style={styles.seeAllText}>すべて見る</Text>
@@ -57,7 +80,7 @@ export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSe
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
       >
         {sampleColumns.map((column) => (
           <TouchableOpacity
@@ -99,13 +122,11 @@ export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSe
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
-    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
     marginBottom: 12,
   },
   headerTitle: {
@@ -117,9 +138,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.accent,
     fontWeight: '600',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
   },
   columnCard: {
     width: 280,

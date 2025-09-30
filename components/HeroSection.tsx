@@ -33,7 +33,7 @@ export default function HeroSection() {
           <View style={styles.content}>
             {/* キャッチコピー */}
             <View style={styles.catchSection}>
-              <Text style={styles.catchTitle}>保活サイト「えんさがそっ♪」で</Text>
+              <Text style={styles.catchTitle}>ほいポチで</Text>
               <Text style={styles.catchSubtitle}>「園探し」をより簡単により</Text>
               <Text style={styles.catchSubtitle}>スマートに</Text>
             </View>

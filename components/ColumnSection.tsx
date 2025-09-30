@@ -10,7 +10,7 @@ interface ColumnItem {
   category: string;
   date: string;
   readTime: string;
-  imageUrl: string;
+  imageUrl: string | number;
 }
 
 const sampleColumns: ColumnItem[] = [
@@ -28,7 +28,7 @@ const sampleColumns: ColumnItem[] = [
     category: '保活の進め方',
     date: '2025-09-25',
     readTime: '5分',
-    imageUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&q=80',
+    imageUrl: require('../assets/images/sample1.png'),
   },
   {
     id: '3',
@@ -36,7 +36,7 @@ const sampleColumns: ColumnItem[] = [
     category: '予約のマナー',
     date: '2025-09-22',
     readTime: '2分',
-    imageUrl: 'https://images.unsplash.com/photo-1560421683-6856ea585c78?w=600&q=80',
+    imageUrl: require('../assets/images/sample2.png'),
   },
 ];
 
@@ -90,7 +90,7 @@ export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSe
             activeOpacity={0.8}
           >
             <ImageBackground
-              source={{ uri: column.imageUrl }}
+              source={typeof column.imageUrl === 'string' ? { uri: column.imageUrl } : column.imageUrl}
               style={styles.columnImage}
               imageStyle={styles.columnImageStyle}
             >

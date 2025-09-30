@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import BottomNav from '../../components/BottomNav';
+import WebHeader from '../../components/WebHeader';
 import { colors } from '../../constants/colors';
 
 export default function TabsLayout() {
@@ -9,12 +10,14 @@ export default function TabsLayout() {
   const TabBar = () => <BottomNav />;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-      }}
-      tabBar={TabBar}
-    >
+    <>
+      <WebHeader />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+        }}
+        tabBar={TabBar}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -39,7 +42,8 @@ export default function TabsLayout() {
           title: 'プロフィール',
         }}
       />
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
 

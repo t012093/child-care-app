@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Chrome as Home, CircleCheck as CheckCircle, FileText, CircleUser as UserCircle } from 'lucide-react-native';
+import { useResponsive } from '../hooks/useResponsive';
 
 const routes = [
   { path: '/' as const, label: 'ホーム', icon: Home },
@@ -13,6 +14,12 @@ const routes = [
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isTablet } = useResponsive();
+
+  // Web版（タブレット以上）では表示しない
+  if (isTablet) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>

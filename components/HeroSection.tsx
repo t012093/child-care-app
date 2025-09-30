@@ -48,29 +48,38 @@ export default function HeroSection() {
 
   const searchSectionStyle = [
     styles.searchSection,
+    isTablet && styles.searchSectionTablet,
     isDesktop && styles.searchSectionDesktop,
   ];
 
   return (
     <View style={containerStyle}>
       <ImageBackground
-        source={{
-          uri: 'https://images.pexels.com/photos/1094763/pexels-photo-1094763.jpeg?auto=compress&cs=tinysrgb&w=1200'
-        }}
+        source={require('../assets/images/hero.png')}
         style={backgroundImageStyle}
         resizeMode="cover"
       >
+        {/* キャッチコピー - タブレット以上では左側に表示 */}
+        {isTablet && (
+          <View style={styles.catchSectionTablet}>
+            <Text style={catchTitleStyle}>ほいポチで</Text>
+            <Text style={catchSubtitleStyle}>「園探し」をより簡単により</Text>
+            <Text style={catchSubtitleStyle}>スマートに</Text>
+          </View>
+        )}
+
         <View style={styles.overlay}>
-          <View style={styles.content}>
-            {/* キャッチコピー */}
+          {/* モバイルのみキャッチコピーを中央に表示 */}
+          {!isTablet && (
             <View style={styles.catchSection}>
               <Text style={catchTitleStyle}>ほいポチで</Text>
               <Text style={catchSubtitleStyle}>「園探し」をより簡単により</Text>
               <Text style={catchSubtitleStyle}>スマートに</Text>
             </View>
+          )}
 
-            {/* 検索セクション */}
-            <View style={searchSectionStyle}>
+          {/* 検索セクション */}
+          <View style={searchSectionStyle}>
               <Text style={styles.searchTitle}>保育施設を検索する</Text>
               <View style={styles.searchInputContainer}>
                 <TextInput
@@ -99,7 +108,6 @@ export default function HeroSection() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
       </ImageBackground>
     </View>
   );
@@ -126,116 +134,129 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-  },
-  content: {
-    width: '100%',
-    maxWidth: 600,
-    paddingHorizontal: 24,
-    alignItems: 'center',
+    paddingBottom: 0,
   },
   catchSection: {
     marginBottom: 40,
     alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  catchSectionTablet: {
+    position: 'absolute',
+    top: 80,
+    left: 60,
+    zIndex: 10,
   },
   catchTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
-    color: 'white',
+    color: colors.accent,
     textAlign: 'center',
     marginBottom: 8,
   },
   catchTitleTablet: {
-    fontSize: 22,
+    fontSize: 28,
   },
   catchTitleDesktop: {
-    fontSize: 26,
+    fontSize: 34,
   },
   catchSubtitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: 'white',
+    color: colors.accent,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
   },
   catchSubtitleTablet: {
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 20,
+    lineHeight: 30,
   },
   catchSubtitleDesktop: {
-    fontSize: 20,
-    lineHeight: 32,
+    fontSize: 24,
+    lineHeight: 36,
   },
   searchSection: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    borderRadius: 0,
+    padding: 16,
     alignItems: 'center',
   },
+  searchSectionTablet: {
+    position: 'absolute',
+    left: 60,
+    bottom: 60,
+    width: 320,
+    height: 190,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    justifyContent: 'center',
+  },
   searchSectionDesktop: {
-    padding: 40,
-    borderRadius: 12,
+    left: 60,
+    bottom: 60,
+    width: 320,
+    height: 190,
   },
   searchTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.textMain,
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: 'center',
   },
   searchInputContainer: {
     flexDirection: 'row',
     width: '100%',
-    marginBottom: 16,
-    // Web版での調整
-    ...(Platform.OS === 'web' && {
-      maxWidth: 400,
-    }),
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
-    height: 50,
+    height: 40,
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    paddingHorizontal: 12,
+    fontSize: 14,
     color: colors.textMain,
   },
   searchButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.accent,
-    paddingHorizontal: 20,
-    height: 50,
+    paddingHorizontal: 16,
+    height: 40,
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
-    gap: 8,
+    gap: 6,
   },
   searchButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'white',
     borderWidth: 2,
     borderColor: colors.accent,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
-    gap: 8,
+    gap: 6,
+    width: '100%',
   },
   locationButtonText: {
     color: colors.accent,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

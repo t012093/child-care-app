@@ -54,6 +54,10 @@ app/
 │   ├── reserve.tsx  # 予約画面
 │   ├── board.tsx    # 掲示板
 │   └── profile.tsx  # プロフィール
+├── application/     # 申請書PDF生成機能
+│   ├── index.tsx    # 申請書一覧
+│   ├── new.tsx      # 新規申請書作成
+│   └── preview/[id].tsx  # PDFプレビュー・ダウンロード
 └── child/           # 子供詳細
 ```
 
@@ -79,18 +83,161 @@ app/
    - 近隣施設表示
    - 予約状況ダッシュボード
 
+4. **申請書PDF自動生成** (`app/application/`)
+   - 入園申請書フォーム入力
+   - PDF自動生成・ダウンロード
+   - 申請履歴管理
+
 ### 📱 Phase 2 - アプリ版エンハンス
-4. **プッシュ通知**
+5. **プッシュ通知**
    - 予約リマインダー
    - 施設からのお知らせ
 
-5. **カメラ機能**
+6. **カメラ機能**
    - プロフィール写真
    - アレルギー情報の写真添付
 
-6. **位置情報**
+7. **位置情報**
    - 近隣施設の自動検索
    - 施設までのナビゲーション
+
+## PDF自動入力機能の実装要件
+
+### 📄 自治体PDFフォーム対応
+
+#### 1. PDF配置場所
+
+**重要**: Web版・モバイル版共通で`assets/templates/`のみ使用
+
+```bash
+/assets/templates/
+  ├── temporary_care_application.pdf
+  └── ...
+```
+
+**配置手順**:
+```bash
+# 自治体PDFをassets/templates/に配置するだけ
+cp path/to/government.pdf assets/templates/
+```
+
+**Metro Asset Systemの利用**:
+- Web版・モバイル版両方で`require()`を使用
+- 開発モード・プロダクションビルド両対応
+- `public/`フォルダは**不要**
+
+```typescript
+// Web版・モバイル版共通コード
+const asset = require('../assets/templates/temporary_care_application.pdf');
+setPdfUri(asset); // Metroが自動的に配信可能なURLに変換
+```
+
+**注意事項**:
+- ~~`public/`フォルダにPDFを配置する必要はありません~~（誤り）
+- Expo Metroの開発モードでは`public/`フォルダは配信されない
+- Metro asset systemを使えば、開発・本番両方で動作する
+
+#### 2. PDF種別判定と処理方法
+
+**ケースA: AcroFormフィールドあり（推奨）**
+```typescript
+// PDFにフォームフィールドが埋め込まれている場合
+import { PDFDocument } from 'pdf-lib';
+
+const pdfDoc = await PDFDocument.load(templateBytes);
+const form = pdfDoc.getForm();
+const nameField = form.getTextField('parentName');
+nameField.setText(userData.parentName);
+```
+
+**ケースB: AcroFormフィールドなし（座標指定）**
+```typescript
+// 座標を手動で設定してテキスト描画
+const fieldPositions = {
+  parentName: { x: 150, y: 700, page: 0 },
+  address: { x: 150, y: 650, page: 0 },
+};
+
+const page = pdfDoc.getPage(0);
+page.drawText(userData.parentName, fieldPositions.parentName);
+```
+
+#### 3. フィールドマッピング設定
+
+**constants/pdfFields.ts**
+```typescript
+export const pdfFieldMappings = {
+  application_form: {
+    type: 'acroform', // または 'coordinate'
+    fields: {
+      parentName: 'field_001',  // AcroFormフィールド名
+      parentPhone: 'field_002',
+      // ...
+    }
+  },
+  temporary_care_form: {
+    type: 'coordinate',
+    fields: {
+      parentName: { x: 150, y: 700, page: 0 },
+      // ...
+    }
+  }
+};
+```
+
+### 🔧 実装ガイドライン
+
+#### Platform別処理
+
+**方法1: Platform-specific files（推奨）**
+```
+components/
+├── PdfPreview.tsx       # モバイル版実装
+└── PdfPreview.web.tsx   # Web版実装
+```
+
+Metro bundlerが自動的にプラットフォームに応じたファイルを選択します。
+
+**方法2: Metro Asset System（現在の実装・推奨）**
+```typescript
+// Web版・モバイル版共通コード
+const asset = require('../assets/templates/temporary_care_application.pdf');
+setPdfUri(asset); // Metro経由で配信されるURL
+```
+
+**誤った実装例（動作しない）**:
+```typescript
+// ❌ 開発モードで動作しない
+if (Platform.OS === 'web') {
+  const pdfUrl = '/assets/templates/temporary_care_application.pdf'; // 404エラー
+  setPdfUri(pdfUrl);
+}
+```
+理由: Expo Metroの開発モードでは`public/`フォルダは配信されない
+
+**重要な制約事項**:
+- `@react-pdf/renderer`: Web版のみ対応（`import.meta`エラーでモバイル不可）
+- `pdf-lib`: Web版のみ対応（tslib競合でモバイル不可）
+- `react-native-pdf`: モバイル版のみ対応（native依存でWeb不可）
+
+#### PDF生成フロー
+
+**現在の実装（v1.0 - テンプレート表示のみ）**:
+1. フォームデータ収集（`app/application/new.tsx`）
+2. プレビュー画面に遷移（`app/application/preview/[id].tsx`）
+3. テンプレートPDFを直接表示
+   - Web版・モバイル版共通: `assets/templates/`から`require()`で読み込み
+   - Web版: Metro asset URL → iframe表示（`PdfPreview.web.tsx`）
+   - モバイル版: Metro asset URL → react-native-pdf表示（`PdfPreview.tsx`）
+4. ダウンロード（Web版のみ）: Metro asset URLをfetchしてダウンロード
+
+**将来の実装（v2.0 - データ自動入力）**:
+1. フォームデータ収集
+2. PDF種別判定（AcroForm or 座標指定）
+3. テンプレート読み込み
+4. **pdf-libでデータ書き込み**（Web版のみ）
+5. プレビュー表示
+6. 入力済みPDFをダウンロード
 
 ## 開発時の注意点
 
@@ -120,10 +267,12 @@ npm run build:web
 
 ### 使用ライブラリ
 - **Expo SDK 54**: マルチプラットフォーム基盤
-- **React Native 0.81.4**: UIコンポーネント
+- **React Native 0.81.4**: UIコンポーメント
 - **Expo Router 6.0.8**: ファイルベースルーティング
 - **Supabase**: 認証・データベース
 - **TypeScript 5.9.2**: 型安全性
+- **react-native-pdf**: PDF表示（モバイル版のみ）
+- **pdf-lib**: PDF編集・フィールド入力（Web版のみ、v2.0で活用予定）
 
 ### パッケージアップデート
 ```bash
@@ -156,3 +305,29 @@ npx expo install <package-name>
 3. **パフォーマンス問題**
    - Bundle Analyzerでサイズ分析
    - 不要なネイティブライブラリの分離
+
+4. **PDF生成関連の問題**
+   - **Web版でPDFプレビューに「Asset not found」エラー**:
+     - ✅ 解決済み: Metro asset systemを使用（`require()`）
+     - `assets/templates/`にPDFが存在するか確認
+     - ~~`public/`フォルダは不要~~（開発モードでは配信されない）
+     - 開発サーバーを再起動: `pkill -f expo && npm run web`
+   - **モバイル版でPDFが表示されない**:
+     - `react-native-pdf`がインストールされているか確認
+     - `npx expo install react-native-pdf`で再インストール
+     - `assets/templates/`にPDFファイルが存在するか確認
+   - **Web bundling時に`react-native-blob-util`エラー**:
+     - Platform-specific files（`.web.tsx`）を使用して分離
+     - `import`文でのPlatform分岐は不十分（bundler段階でエラー）
+   - **`@react-pdf/renderer`で`import.meta`エラー**:
+     - このライブラリはWeb版でも動作しません（ESモジュール問題）
+     - 代替: テンプレートPDF直接表示 or pdf-libを使用
+   - **pdf-libで`tslib.default`エラー**:
+     - Web版のみで動的import使用: `await import('pdf-lib')`
+     - モバイル版では使用しない（Platform.OS チェック）
+   - **自治体PDFのフィールドが認識されない**（v2.0実装時）:
+     - Adobe Acrobatで開いてフォームフィールドの有無を確認
+     - フィールド名を`pdfFieldMappings`に正しく設定
+   - **座標指定がずれる**（v2.0実装時）:
+     - PDFビューアで座標を確認（左下が原点(0,0)）
+     - フォントサイズと文字幅を考慮して調整

@@ -55,18 +55,25 @@ npm run dev
 ## プロジェクト構成
 
 ```
-/workspaces/child-app/
-├── app/                # アプリケーションのルートとスクリーン
-│   ├── (tabs)/        # タブナビゲーション
-│   ├── child/         # 子供向け機能
-│   └── _layout.tsx    # ルートレイアウト
-├── components/        # 再利用可能なコンポーネント
-├── constants/         # 定数定義
-├── hooks/            # カスタムフック
-├── lib/              # ユーティリティ関数
-├── assets/           # 画像やフォントなどのアセット
-└── supabase/         # Supabase設定
+/child-app/
+├── app/                  # アプリケーションのルートとスクリーン
+│   ├── (tabs)/          # タブナビゲーション
+│   ├── application/     # 申請書PDF機能
+│   ├── child/           # 子供向け機能
+│   └── _layout.tsx      # ルートレイアウト
+├── components/          # 再利用可能なコンポーネント
+├── constants/           # 定数定義
+├── hooks/              # カスタムフック
+├── lib/                # ユーティリティ関数
+├── utils/              # PDF生成などのユーティリティ
+├── assets/             # 画像・フォント・PDFなどのアセット
+│   └── templates/      # 自治体PDFテンプレート（重要）
+└── supabase/           # Supabase設定
 ```
+
+**重要なディレクトリ**:
+- `assets/templates/`: 自治体PDFテンプレートを配置（Metro asset systemで配信）
+- `components/PdfPreview.tsx` / `PdfPreview.web.tsx`: Platform-specific実装
 
 ## 利用可能なコマンド
 
@@ -91,16 +98,24 @@ npm run dev
 
 ## 技術スタック
 
-- Expo SDK 53
-- React Native 0.79.5
+- Expo SDK 54
+- React Native 0.81.4
 - React 19.0.0
-- Expo Router 5.1.5
-- TypeScript 5.8.3
+- Expo Router 6.0.8
+- TypeScript 5.9.2
 - Supabase
+- react-native-pdf (PDF表示 - モバイル版)
+- pdf-lib (PDF編集 - Web版のみ)
 
 ## 主な機能
 
 - 🏫 **施設予約**: 保育園や学童施設の検索と予約
+- 📄 **申請書PDF自動生成**: 入園申請書などを自動作成してPDFダウンロード
+  - フォーム入力からワンクリックでPDF生成
+  - 自治体の公式PDFフォームに対応
+  - 保護者・お子様情報の自動入力
+  - **Web版**: PDFプレビュー・ダウンロード機能（iframe表示）
+  - **モバイル版**: PDFプレビュー機能（react-native-pdf）
 - 👨‍👩‍👧‍👦 **コミュニティ**: 子育て中の親同士の情報交換
 - 🛡️ **安全な情報管理**: お子様のアレルギーや医療情報を安全に保存
 - 📱 **マルチプラットフォーム**: iOS、Android、Webに対応
@@ -132,6 +147,39 @@ npx expo start --port 8082
 1. ターミナルを全画面表示にする
 2. `npm run tunnel`を実行し直す
 3. 表示されるURLを手動でExpo Goアプリに入力
+
+### PDFプレビューで「Asset not found」エラー
+
+**✅ 解決済み**: Metro asset systemを使用することで解決しています。
+
+PDFが表示されない場合：
+
+1. `assets/templates/`にPDFが存在するか確認
+   ```bash
+   ls assets/templates/
+   ```
+2. 開発サーバーを再起動
+   ```bash
+   pkill -f expo
+   npm run web
+   ```
+
+**重要**: このアプリではMetro asset systemを使用しています。
+- PDFは`assets/templates/`に配置するだけでOK
+- `public/`フォルダは**不要**（開発モードでは配信されない）
+- `require()`で読み込むことでWeb・モバイル両対応
+
+### Platform-specific files（プラットフォーム別ファイル）
+
+Web版とモバイル版で異なる実装が必要な場合、ファイル拡張子で分岐できます：
+
+```
+components/
+├── PdfPreview.tsx       # モバイル版（iOS/Android）
+└── PdfPreview.web.tsx   # Web版
+```
+
+Metro bundlerが自動的にプラットフォームに応じて適切なファイルを選択します。
 
 ## ライセンス
 

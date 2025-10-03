@@ -6,6 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 const menuItems = [
   { label: '保育施設を検索する', path: '/reserve' },
+  { label: '申請書作成', path: '/application' },
   { label: 'マイページ', path: '/profile' },
   {
     label: '保活コラム',

@@ -1,45 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { Clock } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
-
-interface ColumnItem {
-  id: string;
-  title: string;
-  category: string;
-  date: string;
-  readTime: string;
-  imageUrl: string | number;
-}
-
-const sampleColumns: ColumnItem[] = [
-  {
-    id: '1',
-    title: '初めての一時預かり、準備するものは？',
-    category: '基本知識',
-    date: '2025-09-28',
-    readTime: '3分',
-    imageUrl: require('../assets/images/optimized/sample3.webp'),
-  },
-  {
-    id: '2',
-    title: '保育園見学で確認すべき10のポイント',
-    category: '保活の進め方',
-    date: '2025-09-25',
-    readTime: '5分',
-    imageUrl: require('../assets/images/optimized/sample1.webp'),
-  },
-  {
-    id: '3',
-    title: 'キャンセル時のマナーと注意点',
-    category: '予約のマナー',
-    date: '2025-09-22',
-    readTime: '2分',
-    imageUrl: require('../assets/images/optimized/sample2.webp'),
-  },
-];
+import { mockArticles, categoryColors } from '../constants/columnData';
 
 interface ColumnSectionProps {
   onColumnPress?: (columnId: string) => void;
@@ -48,6 +12,11 @@ interface ColumnSectionProps {
 
 export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSectionProps) {
   const { horizontalPadding, isDesktop } = useResponsive();
+
+  // 注目記事またはカテゴリーが異なる最新3記事を取得
+  const featuredArticles = mockArticles
+    .filter(article => article.isFeatured)
+    .slice(0, 3);
 
   const containerStyle = [
     styles.container,
@@ -83,42 +52,58 @@ export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSe
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={scrollContentStyle}
       >
-        {sampleColumns.map((column) => (
-          <TouchableOpacity
-            key={column.id}
-            style={styles.columnCard}
-            onPress={() => onColumnPress?.(column.id)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.columnImageContainer}>
-              <Image
-                source={typeof column.imageUrl === 'string' ? { uri: column.imageUrl } : column.imageUrl}
-                style={styles.columnImage}
-                contentFit="cover"
-                transition={200}
-                cachePolicy="memory-disk"
-                priority="normal"
-              />
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{column.category}</Text>
-              </View>
-            </View>
-
-            <View style={styles.columnContent}>
-              <Text style={styles.columnTitle} numberOfLines={2}>
-                {column.title}
-              </Text>
-
-              <View style={styles.columnMeta}>
-                <View style={styles.metaItem}>
-                  <Clock size={14} color={colors.textSub} />
-                  <Text style={styles.metaText}>{column.readTime}</Text>
+        {featuredArticles.map((article) => {
+          const categoryInfo = categoryColors[article.category];
+          return (
+            <TouchableOpacity
+              key={article.id}
+              style={styles.columnCard}
+              onPress={() => onColumnPress?.(article.id)}
+              activeOpacity={0.9}
+            >
+              {/* 画像エリア */}
+              <View style={styles.columnImageContainer}>
+                <Image
+                  source={{ uri: article.image }}
+                  style={styles.columnImage}
+                  contentFit="cover"
+                  transition={200}
+                  cachePolicy="memory-disk"
+                  priority="normal"
+                />
+                {/* カテゴリーバッジ（新デザイン: 透明背景 + ボーダー） */}
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{categoryInfo.label}</Text>
                 </View>
-                <Text style={styles.dateText}>{column.date}</Text>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+
+              {/* コンテンツエリア */}
+              <View style={styles.columnContent}>
+                {/* 記事ID */}
+                <Text style={styles.columnId}>#{article.id}</Text>
+
+                {/* タイトル */}
+                <Text style={styles.columnTitle} numberOfLines={2}>
+                  {article.title}
+                </Text>
+
+                {/* フッター */}
+                <View style={styles.columnFooter}>
+                  <Text style={styles.columnDate}>{article.date}</Text>
+                  {article.tags && article.tags.length > 0 && (
+                    <View style={styles.columnTags}>
+                      {article.tags.slice(0, 2).map((tag) => (
+                        <Text key={tag} style={styles.columnTag}>
+                          #{tag}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -147,19 +132,20 @@ const styles = StyleSheet.create({
   columnCard: {
     width: 280,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     marginRight: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 3,
     overflow: 'hidden',
   },
   columnImageContainer: {
     width: '100%',
-    height: 160,
+    aspectRatio: 16 / 10,
     position: 'relative',
+    backgroundColor: colors.accentSoft,
   },
   columnImage: {
     width: '100%',
@@ -167,45 +153,54 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: colors.accent,
-    paddingHorizontal: 12,
+    top: 15,
+    left: 15,
+    paddingHorizontal: 16,
     paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: colors.accent,
+    borderRadius: 4,
     zIndex: 1,
   },
   categoryText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.surface,
+    color: colors.accent,
   },
   columnContent: {
-    padding: 16,
+    padding: 20,
+  },
+  columnId: {
+    fontSize: 12,
+    color: colors.textSub,
+    marginBottom: 8,
+    fontWeight: '500',
   },
   columnTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.textMain,
-    lineHeight: 22,
+    lineHeight: 24,
     marginBottom: 12,
   },
-  columnMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  columnFooter: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
   },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  metaText: {
+  columnDate: {
     fontSize: 12,
     color: colors.textSub,
+    marginBottom: 8,
   },
-  dateText: {
-    fontSize: 12,
+  columnTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  columnTag: {
+    fontSize: 11,
     color: colors.textSub,
   },
 });

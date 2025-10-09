@@ -36,7 +36,7 @@ export default function ReserveScreen() {
           </View>
         </View>
 
-        <View style={styles.listHeader}>
+        <View style={[styles.listHeader, isWeb && styles.listHeaderWeb]}>
           <Text style={styles.listTitle}>近くの施設</Text>
           <Text style={styles.listSubtitle}>{sampleFacilities.length}件見つかりました</Text>
         </View>
@@ -120,6 +120,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  listHeaderWeb: {
+    paddingHorizontal: 32,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 1024,
   },
   listTitle: {
     fontSize: 18,

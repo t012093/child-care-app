@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { MapPin, Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
@@ -13,56 +13,65 @@ export default function FacilityListItem({ facility }: FacilityListItemProps) {
   const router = useRouter();
 
   return (
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={() => router.push(`/facility/${facility.id}`)}
-    >
-      <Image source={{ uri: facility.imageUrl }} style={styles.image} />
-      
-      <View style={styles.content}>
-        <Text style={styles.name}>{facility.name}</Text>
-        
-        <View style={styles.detailsRow}>
-          <View style={styles.locationContainer}>
-            <MapPin size={14} color={colors.textSub} />
-            <Text style={styles.distance}>{facility.distance} km</Text>
-          </View>
-          
-          <View style={styles.ratingContainer}>
-            <Star size={14} color="#FFCA28" fill="#FFCA28" />
-            <Text style={styles.rating}>{facility.rating.toFixed(1)}</Text>
+    <View style={styles.wrapper}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => router.push(`/facility/${facility.id}`)}
+        activeOpacity={0.9}
+      >
+        <Image source={{ uri: facility.imageUrl }} style={styles.image} />
+
+        <View style={styles.content}>
+          <Text style={styles.name}>{facility.name}</Text>
+
+          <View style={styles.detailsRow}>
+            <View style={styles.locationContainer}>
+              <MapPin size={14} color={colors.textSub} />
+              <Text style={styles.distance}>{facility.distance} km</Text>
+            </View>
+
+            <View style={styles.ratingContainer}>
+              <Star size={14} color="#FFCA28" fill="#FFCA28" />
+              <Text style={styles.rating}>{facility.rating.toFixed(1)}</Text>
+            </View>
           </View>
         </View>
-      </View>
-      
-      <TouchableOpacity 
-        style={styles.reserveButton}
-        onPress={() => router.push(`/facility/${facility.id}`)}
-      >
-        <Text style={styles.reserveText}>予約</Text>
+
+        <TouchableOpacity
+          style={styles.reserveButton}
+          onPress={() => router.push(`/facility/${facility.id}`)}
+        >
+          <Text style={styles.reserveText}>予約</Text>
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    paddingHorizontal: Platform.OS === 'web' ? 32 : 16,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
+  },
   container: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
     borderRadius: 12,
-    marginHorizontal: 16,
     marginVertical: 8,
     padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   image: {
-    width: 60,
-    height: 60,
+    width: Platform.OS === 'web' ? 80 : 60,
+    height: Platform.OS === 'web' ? 80 : 60,
     borderRadius: 8,
+    backgroundColor: colors.accentSoft,
   },
   content: {
     flex: 1,

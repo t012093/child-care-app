@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeroSection from '../../components/HeroSection';
 import TodayScheduleCard from '../../components/TodayScheduleCard';
@@ -7,12 +7,10 @@ import NotificationCard from '../../components/NotificationCard';
 import ColumnSection from '../../components/ColumnSection';
 import KnowledgeSection from '../../components/KnowledgeSection';
 import NearbyCarousel from '../../components/NearbyCarousel';
-import QuickActionCard from '../../components/QuickActionCard';
 import Footer from '../../components/Footer';
 import { HomeSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
-import { FileText } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -77,14 +75,6 @@ export default function HomeScreen() {
         <NotificationCard
           onNotificationPress={(id) => console.log('Notification pressed:', id)}
           onSeeAllPress={() => console.log('See all notifications')}
-        />
-
-        <QuickActionCard
-          icon={FileText}
-          title="入園申請書を作成"
-          description="必要事項を入力してPDFを自動生成"
-          onPress={() => router.push('/application')}
-          iconColor={colors.accent}
         />
 
         <ColumnSection

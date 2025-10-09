@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import Footer from '../../components/Footer';
 import { colors } from '../../constants/colors';
 
 export default function NewApplicationScreen() {
@@ -266,7 +267,7 @@ export default function NewApplicationScreen() {
         {currentStep === 2 && renderStep2()}
         {currentStep === 3 && renderStep3()}
 
-        <View style={styles.footer} />
+        <Footer />
       </ScrollView>
 
       <View style={styles.buttonContainer}>
@@ -312,10 +313,13 @@ const styles = StyleSheet.create({
   stepIndicator: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 32,
+    paddingHorizontal: Platform.OS === 'web' ? 32 : 32,
     paddingVertical: 24,
     backgroundColor: colors.surface,
     marginBottom: 16,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   stepItem: {
     alignItems: 'center',
@@ -348,7 +352,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepContent: {
-    padding: 16,
+    paddingHorizontal: Platform.OS === 'web' ? 32 : 16,
+    paddingVertical: 16,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   sectionTitle: {
     fontSize: 18,
@@ -428,6 +436,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     gap: 12,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   primaryButton: {
     flex: 1,

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus, Settings } from 'lucide-react-native';
 import ApplicationCard, { Application } from '../../components/ApplicationCard';
+import Footer from '../../components/Footer';
 import { colors } from '../../constants/colors';
 
 export default function ApplicationListScreen() {
@@ -32,6 +33,15 @@ export default function ApplicationListScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>申請書管理</Text>
+        {Platform.OS === 'web' && (
+          <TouchableOpacity
+            style={styles.mappingButton}
+            onPress={() => router.push('/application/mapping/temporary_care_application')}
+          >
+            <Settings size={20} color={colors.accent} />
+            <Text style={styles.mappingButtonText}>マッピング設定</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -59,7 +69,7 @@ export default function ApplicationListScreen() {
           </View>
         )}
 
-        <View style={styles.footer} />
+        <Footer />
       </ScrollView>
 
       <TouchableOpacity
@@ -80,6 +90,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
     paddingTop: 24,
     backgroundColor: colors.background,
@@ -89,6 +102,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textMain,
   },
+  mappingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    gap: 6,
+  },
+  mappingButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
+  },
   scrollContainer: {
     flex: 1,
   },
@@ -96,8 +125,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: Platform.OS === 'web' ? 32 : 16,
     paddingVertical: 12,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   sectionTitle: {
     fontSize: 18,
@@ -134,8 +166,8 @@ const styles = StyleSheet.create({
   createButton: {
     position: 'absolute',
     bottom: 16,
-    left: 16,
-    right: 16,
+    left: Platform.OS === 'web' ? 'auto' : 16,
+    right: Platform.OS === 'web' ? 'auto' : 16,
     backgroundColor: colors.accent,
     borderRadius: 12,
     paddingVertical: 16,
@@ -148,6 +180,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
+    alignSelf: Platform.OS === 'web' ? 'center' : undefined,
+    width: Platform.OS === 'web' ? '100%' : undefined,
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
+    marginHorizontal: Platform.OS === 'web' ? 32 : 0,
   },
   createButtonText: {
     fontSize: 16,

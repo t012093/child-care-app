@@ -8,6 +8,7 @@ import ColumnSection from '../../components/ColumnSection';
 import KnowledgeSection from '../../components/KnowledgeSection';
 import NearbyCarousel from '../../components/NearbyCarousel';
 import QuickActionCard from '../../components/QuickActionCard';
+import Footer from '../../components/Footer';
 import { HomeSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -87,8 +88,8 @@ export default function HomeScreen() {
         />
 
         <ColumnSection
-          onColumnPress={(id) => console.log('Column pressed:', id)}
-          onSeeAllPress={() => router.push('/(tabs)/board')}
+          onColumnPress={(id) => router.push(`/column/${id}`)}
+          onSeeAllPress={() => router.push('/column')}
         />
 
         <KnowledgeSection
@@ -101,7 +102,7 @@ export default function HomeScreen() {
 
         <NearbyCarousel />
 
-        <View style={styles.footer} />
+        <Footer />
       </ScrollView>
     </SafeAreaView>
   );

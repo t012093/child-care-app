@@ -15,7 +15,9 @@ import { ChevronLeft, Download, Edit } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import { colors } from '../../../constants/colors';
 import { generateApplicationPDF, downloadPDF } from '../../../utils/pdfGenerator';
+import { downloadAutoFilledPDF } from '../../../utils/pdfAutoFill';
 import PdfPreview from '../../../components/PdfPreview';
+import Footer from '../../../components/Footer';
 
 export default function PreviewScreen() {
   const router = useRouter();
@@ -80,6 +82,35 @@ export default function PreviewScreen() {
 
   const handleEdit = () => {
     router.push('/application/new');
+  };
+
+  const handleAutoFillDownload = async () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('お知らせ', '自動入力機能はWeb版でのみ利用可能です');
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const asset = require('../../../assets/templates/temporary_care_application.pdf');
+      const filename = `${applicationData.applicationType}_${applicationData.childName}_入力済み_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      await downloadAutoFilledPDF(
+        asset,
+        'temporary_care_application',
+        applicationData,
+        filename
+      );
+
+      Alert.alert('成功', '入力済みPDFのダウンロードを開始しました');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'PDFの自動入力に失敗しました';
+      Alert.alert('エラー', errorMessage);
+      console.error('PDF auto-fill error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -174,30 +205,60 @@ export default function PreviewScreen() {
           )}
         </View>
 
-          <View style={styles.footer} />
+          <Footer />
         </ScrollView>
       )}
 
-      <View style={styles.buttonContainer}>
+      {/* 改善されたボタン配置: 3段レイアウト with 優先順位の明確化 */}
+      <View style={styles.actionSection}>
+        {/* プライマリーアクション: 自動入力ダウンロード */}
         <TouchableOpacity
-          style={[styles.downloadButton, { flex: 1, marginRight: 8 }]}
-          onPress={handlePreview}
-          disabled={isGenerating}
-        >
-          <Text style={styles.downloadButtonText}>
-            {isGenerating ? 'PDF読込中...' : 'PDFプレビュー'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.downloadButton, { flex: 1 }]}
-          onPress={handleDownload}
-          disabled={isGenerating}
+          style={[
+            styles.primaryButton,
+            (isGenerating || Platform.OS !== 'web') && styles.buttonDisabled
+          ]}
+          onPress={handleAutoFillDownload}
+          disabled={isGenerating || Platform.OS !== 'web'}
         >
           <Download size={20} color="white" />
-          <Text style={styles.downloadButtonText}>
-            {Platform.OS === 'web' ? 'ダウンロード' : 'ダウンロード (Web版のみ)'}
+          <Text style={styles.primaryButtonText}>
+            自動入力してダウンロード
           </Text>
+          {Platform.OS !== 'web' && (
+            <Text style={styles.badgeText}>Web版のみ</Text>
+          )}
         </TouchableOpacity>
+
+        {/* セカンダリーアクション: 横並びボタン */}
+        <View style={styles.secondaryRow}>
+          <TouchableOpacity
+            style={[styles.secondaryButton, styles.previewButton]}
+            onPress={handlePreview}
+            disabled={isGenerating}
+          >
+            <Text style={styles.secondaryButtonText}>
+              {isGenerating ? 'PDF読込中...' : 'PDFプレビュー'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              styles.downloadButton,
+              (isGenerating || Platform.OS !== 'web') && styles.buttonDisabled
+            ]}
+            onPress={handleDownload}
+            disabled={isGenerating || Platform.OS !== 'web'}
+          >
+            <Download size={18} color={colors.accent} />
+            <Text style={styles.downloadOnlyText}>通常DL</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 説明テキスト */}
+        <Text style={styles.actionHint}>
+          💡 「自動入力してダウンロード」なら申請書への記入が不要です
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -230,7 +291,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   previewCard: {
-    margin: 16,
+    marginHorizontal: Platform.OS === 'web' ? 32 : 16,
+    marginVertical: 16,
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
@@ -239,6 +301,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   previewTitle: {
     fontSize: 20,
@@ -282,25 +347,88 @@ const styles = StyleSheet.create({
   footer: {
     height: 100,
   },
-  buttonContainer: {
+  actionSection: {
     padding: 16,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+    gap: 12,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
-  downloadButton: {
+  primaryButton: {
     flexDirection: 'row',
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  downloadButtonText: {
+  primaryButtonText: {
     fontSize: 16,
+    fontWeight: '700',
+    color: 'white',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  badgeText: {
+    fontSize: 11,
     fontWeight: '600',
     color: 'white',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 4,
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  previewButton: {
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textMain,
+  },
+  downloadButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  downloadOnlyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
+  },
+  actionHint: {
+    fontSize: 12,
+    color: colors.textSub,
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 8,
   },
   pdfContainer: {
     flex: 1,

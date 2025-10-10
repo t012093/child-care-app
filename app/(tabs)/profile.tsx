@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, TouchableOpacity } from 'react-native';
-import { ChevronRight, Phone, Mail, MessageSquare, LogOut } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
+import { ChevronRight, Phone, Mail, MessageSquare, LogOut, Settings } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/AuthContext';
@@ -120,15 +120,25 @@ export default function ProfileScreen() {
       <ScrollView>
         <View style={styles.header}>
           <Text style={styles.title}>プロフィール</Text>
-          <TouchableOpacity 
-            style={styles.logoutButton} 
-            onPress={handleLogout}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <LogOut size={20} color={colors.textSub} />
-            <Text style={styles.logoutText}>ログアウト</Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => router.push('/settings')}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Settings size={20} color={colors.textSub} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <LogOut size={20} color={colors.textSub} />
+              <Text style={styles.logoutText}>ログアウト</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.profileSection}>
@@ -138,7 +148,10 @@ export default function ProfileScreen() {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.parentName}>{parent.name}</Text>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => router.push('/settings/profile')}
+            >
               <Text style={styles.editButtonText}>編集</Text>
             </TouchableOpacity>
           </View>
@@ -182,11 +195,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     paddingTop: 24,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.textMain,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
+    backgroundColor: colors.accentSoft,
+    borderRadius: 16,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -206,6 +232,9 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   avatar: {
     width: 80,
@@ -236,6 +265,9 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: 16,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   sectionTitle: {
     fontSize: 18,

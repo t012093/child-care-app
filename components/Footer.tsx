@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Linking } from 'react-native';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Heart } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
 
 export default function Footer() {
+  const router = useRouter();
+
   // Web版のみ表示
   if (Platform.OS !== 'web') {
     return null;
@@ -11,6 +14,10 @@ export default function Footer() {
 
   const handleLink = (url: string) => {
     Linking.openURL(url);
+  };
+
+  const handleInternalLink = (path: string) => {
+    router.push(path as any);
   };
 
   return (
@@ -50,16 +57,16 @@ export default function Footer() {
           {/* サービス */}
           <View style={styles.column}>
             <Text style={styles.columnTitle}>サービス</Text>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/(tabs)/reserve')}>
               <Text style={styles.linkText}>施設検索・予約</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/application')}>
               <Text style={styles.linkText}>申請書作成</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/column')}>
               <Text style={styles.linkText}>子育てコラム</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/(tabs)/index')}>
               <Text style={styles.linkText}>お役立ち情報</Text>
             </TouchableOpacity>
           </View>
@@ -67,19 +74,19 @@ export default function Footer() {
           {/* サポート */}
           <View style={styles.column}>
             <Text style={styles.columnTitle}>サポート</Text>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/support/faq')}>
               <Text style={styles.linkText}>よくある質問</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/support/guide')}>
               <Text style={styles.linkText}>使い方ガイド</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/support/contact')}>
               <Text style={styles.linkText}>お問い合わせ</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/legal/privacy')}>
               <Text style={styles.linkText}>プライバシーポリシー</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
+            <TouchableOpacity style={styles.linkItem} onPress={() => handleInternalLink('/legal/terms')}>
               <Text style={styles.linkText}>利用規約</Text>
             </TouchableOpacity>
           </View>

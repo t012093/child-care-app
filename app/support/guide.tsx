@@ -7,9 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Platform,
-} from 'react-
-
-';
+} from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
   ChevronLeft,

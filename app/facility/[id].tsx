@@ -231,10 +231,15 @@ const styles = StyleSheet.create({
   mainImage: {
     width: '100%',
     height: Platform.OS === 'web' ? 300 : 250,
+    alignSelf: 'center',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   basicInfo: {
     padding: 16,
     backgroundColor: colors.surface,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   nameAndType: {
     flexDirection: 'row',
@@ -281,6 +286,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     gap: 12,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   actionButton: {
     flex: 1,
@@ -314,6 +322,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 20,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1024 : undefined,
   },
   sectionTitle: {
     fontSize: 18,

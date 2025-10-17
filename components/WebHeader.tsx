@@ -8,17 +8,7 @@ const menuItems = [
   { label: '保育施設を検索する', path: '/reserve' },
   { label: '申請書作成', path: '/application' },
   { label: 'マイページ', path: '/profile' },
-  {
-    label: '保活コラム',
-    path: '/column',
-    subMenu: [
-      { label: '保活について知ろう！', path: '/column#step' },
-      { label: '育休応援コンテンツ', path: '/column#book' },
-      { label: '働き方・生まれ月で見る保活', path: '/column#birth' },
-      { label: '保活のおすすめ記事', path: '/column#recommend' },
-      { label: 'エリア別保活情報', path: '/column#area' },
-    ]
-  },
+  { label: '保活コラム', path: '/column' },
   { label: 'お困りのときはこちら', path: '/contact' },
 ];
 
@@ -48,39 +38,17 @@ export default function WebHeader() {
         <View style={styles.menuContainer}>
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
-            const hasSubMenu = 'subMenu' in item && item.subMenu;
 
             return (
-              <View
+              <TouchableOpacity
                 key={item.path}
-                style={styles.menuItemWrapper}
-                onPointerEnter={() => hasSubMenu && setHoveredMenu(item.path)}
-                onPointerLeave={() => hasSubMenu && setHoveredMenu(null)}
+                style={[styles.menuItem, isActive && styles.menuItemActive]}
+                onPress={() => router.push(item.path as any)}
               >
-                <TouchableOpacity
-                  style={[styles.menuItem, isActive && styles.menuItemActive]}
-                  onPress={() => router.push(item.path as any)}
-                >
-                  <Text style={[styles.menuText, isActive && styles.menuTextActive]}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* サブメニュー */}
-                {hasSubMenu && hoveredMenu === item.path && (
-                  <View style={styles.subMenu}>
-                    {item.subMenu.map((subItem) => (
-                      <TouchableOpacity
-                        key={subItem.path}
-                        style={styles.subMenuItem}
-                        onPress={() => router.push(subItem.path as any)}
-                      >
-                        <Text style={styles.subMenuText}>{subItem.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
+                <Text style={[styles.menuText, isActive && styles.menuTextActive]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
             );
           })}
 

@@ -95,6 +95,19 @@ export function FacilityCardSkeleton() {
   );
 }
 
+export function FacilityListItemSkeleton() {
+  return (
+    <View style={styles.facilityListItem}>
+      <SkeletonLoader width={60} height={60} borderRadius={8} />
+      <View style={styles.facilityListContent}>
+        <SkeletonLoader width="80%" height={16} />
+        <SkeletonLoader width="50%" height={12} style={{ marginTop: 8 }} />
+      </View>
+      <SkeletonLoader width={60} height={32} borderRadius={8} />
+    </View>
+  );
+}
+
 export function HomeSkeleton() {
   return (
     <View style={styles.homeContainer}>
@@ -193,5 +206,18 @@ const styles = StyleSheet.create({
   },
   facilityContent: {
     padding: 12,
+  },
+  facilityListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
+  },
+  facilityListContent: {
+    flex: 1,
+    marginLeft: 12,
   },
 });

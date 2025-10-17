@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ChevronLeft, Calendar, Heart, Activity, User, Camera, Edit3, Shield, Baby } from 'lucide-react-native';
+import { ChevronLeft, Calendar, Heart, Activity, User, Camera, Edit3, Shield, Baby, Thermometer, Smile } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useAuth } from '../../lib/AuthContext';
 
@@ -34,12 +34,19 @@ interface ChildData {
   preferences?: {
     likes: string[];
     dislikes: string[];
+    comfortItems?: string;
+    sleepRoutine?: string;
+    dietaryRestrictions?: string;
   };
   development?: {
     milestones: {
       title: string;
       achieved: boolean;
     }[];
+  };
+  health?: {
+    currentTemperature?: string;
+    lastCheckDate?: string;
   };
 }
 
@@ -74,6 +81,9 @@ const mockChildren: Record<string, ChildData> = {
     preferences: {
       likes: ["お絵かき", "ブロック遊び"],
       dislikes: ["大きな音", "暗い場所"],
+      comfortItems: "お気に入りのぬいぐるみ",
+      sleepRoutine: "絵本を読んでから寝る",
+      dietaryRestrictions: "なし",
     },
     development: {
       milestones: [
@@ -82,6 +92,10 @@ const mockChildren: Record<string, ChildData> = {
         { title: "スプーンで食べる", achieved: true },
         { title: "簡単な指示に従う", achieved: true },
       ],
+    },
+    health: {
+      currentTemperature: "36.5℃",
+      lastCheckDate: "2025-10-03",
     },
   },
   "2": {
@@ -113,6 +127,9 @@ const mockChildren: Record<string, ChildData> = {
     preferences: {
       likes: ["歌", "ダンス", "お絵かき"],
       dislikes: ["虫"],
+      comfortItems: "タオルケット",
+      sleepRoutine: "音楽を聴きながら寝る",
+      dietaryRestrictions: "なし",
     },
     development: {
       milestones: [
@@ -121,6 +138,10 @@ const mockChildren: Record<string, ChildData> = {
         { title: "自分で着替える", achieved: true },
         { title: "トイレを使う", achieved: true },
       ],
+    },
+    health: {
+      currentTemperature: "36.8℃",
+      lastCheckDate: "2025-10-04",
     },
   },
 };
@@ -164,10 +185,7 @@ export default function ChildProfileScreen() {
 
   const child = userChild ? {
     ...mockChild,
-    id: userChild.id,
-    name: userChild.name,
-    birthDate: userChild.birthDate,
-    allergies: userChild.allergies || [],
+    ...userChild,
     imageUrl: userChild.photo || mockChild?.imageUrl || "https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=600",
     ageMonths: (() => {
       const birth = new Date(userChild.birthDate);
@@ -175,7 +193,6 @@ export default function ChildProfileScreen() {
       return (today.getFullYear() - birth.getFullYear()) * 12 +
              (today.getMonth() - birth.getMonth());
     })(),
-    medicalInfo: userChild.medicalInfo
   } : mockChild;
 
   if (!child) {
@@ -361,10 +378,31 @@ export default function ChildProfileScreen() {
               </InfoCard>
             )}
 
+            {child.health && (
+              <InfoCard
+                title="健康・検温"
+                icon={<Thermometer size={20} color={colors.accent} />}
+                onEdit={() => console.log('Edit health')}
+              >
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>体温</Text>
+                  <Text style={styles.infoValue}>{child.health.currentTemperature}</Text>
+                </View>
+                {child.health.lastCheckDate && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>測定日</Text>
+                    <Text style={styles.infoValue}>
+                      {new Date(child.health.lastCheckDate).toLocaleDateString('ja-JP')}
+                    </Text>
+                  </View>
+                )}
+              </InfoCard>
+            )}
+
             {child.preferences && (
               <InfoCard
-                title="好き嫌い"
-                icon={<Heart size={20} color={colors.accent} />}
+                title="嗜好・ケア"
+                icon={<Smile size={20} color={colors.accent} />}
                 onEdit={() => console.log('Edit preferences')}
               >
                 <View style={styles.preferenceSection}>
@@ -372,7 +410,7 @@ export default function ChildProfileScreen() {
                   <View style={styles.tagContainer}>
                     {child.preferences.likes.map((like, index) => (
                       <View key={index} style={[styles.tag, styles.likeTag]}>
-                        <Text style={styles.tagText}>{like}</Text>
+                        <Text style={[styles.tagText, styles.likeTagText]}>{like}</Text>
                       </View>
                     ))}
                   </View>
@@ -387,6 +425,24 @@ export default function ChildProfileScreen() {
                     ))}
                   </View>
                 </View>
+                {child.preferences.comfortItems && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>落ち着くアイテム</Text>
+                    <Text style={styles.infoValue}>{child.preferences.comfortItems}</Text>
+                  </View>
+                )}
+                {child.preferences.sleepRoutine && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>入眠ルーティン</Text>
+                    <Text style={styles.infoValue}>{child.preferences.sleepRoutine}</Text>
+                  </View>
+                )}
+                {child.preferences.dietaryRestrictions && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>食事制限</Text>
+                    <Text style={styles.infoValue}>{child.preferences.dietaryRestrictions}</Text>
+                  </View>
+                )}
               </InfoCard>
             )}
 
@@ -661,6 +717,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5E8',
     borderColor: '#4CAF50',
     borderWidth: 1,
+  },
+  likeTagText: {
+    color: '#4CAF50',
   },
   dislikeTag: {
     backgroundColor: '#FFF3E0',

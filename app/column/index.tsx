@@ -13,7 +13,7 @@ import {
   ImageBackground,
 } from 'react-native';
 import { Search, ChevronLeft } from 'lucide-react-native';
-import { colors } from '../../constants/colors';
+import { columnColors } from '../../constants/colors';
 import { useRouter, Stack } from 'expo-router';
 import { mockArticles, categoryColors, type ArticleCategory } from '../../constants/columnData';
 import Footer from '../../components/Footer';
@@ -104,7 +104,7 @@ export default function ColumnListScreen() {
           headerShown: true,
           headerTitle: '保育コラム',
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: columnColors.background,
           },
           headerTitleStyle: {
             fontSize: 18,
@@ -112,7 +112,7 @@ export default function ColumnListScreen() {
           },
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-              <ChevronLeft size={24} color={colors.textMain} />
+              <ChevronLeft size={24} color={columnColors.textMain} />
             </TouchableOpacity>
           ),
         }}
@@ -135,11 +135,11 @@ export default function ColumnListScreen() {
 
                 {/* 検索バー */}
                 <View style={styles.searchBar}>
-                  <Search size={20} color={colors.textSub} />
+                  <Search size={20} color={columnColors.textSub} />
                   <TextInput
                     style={styles.searchInput}
                     placeholder="🔍 キーワードで検索..."
-                    placeholderTextColor={colors.textSub}
+                    placeholderTextColor={columnColors.textSub}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                   />
@@ -157,7 +157,7 @@ export default function ColumnListScreen() {
                           style={[
                             styles.heroCategoryTag,
                             selectedCategory === cat && {
-                              backgroundColor: colors.accent,
+                              backgroundColor: columnColors.accent,
                             },
                           ]}
                           onPress={() =>
@@ -303,7 +303,7 @@ export default function ColumnListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: columnColors.background,
   },
   headerBackButton: {
     padding: 8,
@@ -338,13 +338,13 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: Platform.OS === 'web' ? 42 : 30,
     fontWeight: '700',
-    color: colors.textMain,
+    color: columnColors.textMain,
     marginBottom: 15,
     textAlign: 'center',
   },
   heroSubtitle: {
     fontSize: Platform.OS === 'web' ? 18 : 15,
-    color: colors.textSub,
+    color: columnColors.textSub,
     marginBottom: 40,
     textAlign: 'center',
   },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: columnColors.surface,
     borderRadius: 50,
     paddingHorizontal: 24,
     paddingVertical: 16,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: colors.textMain,
+    color: columnColors.textMain,
   },
   // 人気のカテゴリー
   popularCategories: {
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   },
   popularCategoriesLabel: {
     fontSize: 13,
-    color: colors.textSub,
+    color: columnColors.textSub,
     marginBottom: 15,
   },
   popularCategoriesList: {
@@ -392,29 +392,29 @@ const styles = StyleSheet.create({
   heroCategoryTag: {
     paddingHorizontal: 24,
     paddingVertical: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: columnColors.surface,
     borderWidth: 2,
-    borderColor: colors.accent,
+    borderColor: columnColors.accent,
     borderRadius: 25,
   },
   heroCategoryText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.accent,
+    color: columnColors.accent,
   },
   heroCategoryTextActive: {
-    color: colors.surface,
+    color: columnColors.surface,
   },
   // タグフィルター
   tagFilterSection: {
     paddingTop: 8,
     paddingBottom: 24,
-    backgroundColor: colors.background,
+    backgroundColor: columnColors.background,
   },
   tagFilterLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textSub,
+    color: columnColors.textSub,
     paddingHorizontal: Platform.OS === 'web' ? 32 : 16,
     marginBottom: 12,
   },
@@ -425,23 +425,23 @@ const styles = StyleSheet.create({
   tagChip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    backgroundColor: colors.surface,
+    backgroundColor: columnColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.accentSoft,
+    borderColor: columnColors.accentSoft,
     marginRight: 8,
   },
   tagChipActive: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
+    backgroundColor: columnColors.accentSoft,
+    borderColor: columnColors.accent,
   },
   tagChipText: {
     fontSize: 12,
-    color: colors.textSub,
+    color: columnColors.textSub,
     fontWeight: '500',
   },
   tagChipTextActive: {
-    color: colors.accent,
+    color: columnColors.accent,
     fontWeight: '600',
   },
   // コラムグリッド
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.textSub,
+    color: columnColors.textSub,
   },
   columnCard: {
     width: '100%',
@@ -470,10 +470,11 @@ const styles = StyleSheet.create({
   },
   columnCardWeb: {
     width: 'calc(33.333% - 20px)',
+    maxWidth: 380,
     marginBottom: 0,
   },
   columnCardInner: {
-    backgroundColor: colors.surface,
+    backgroundColor: columnColors.surface,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     aspectRatio: 16 / 10,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: columnColors.accentSoft,
   },
   columnImage: {
     width: '100%',
@@ -500,33 +501,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: colors.accent,
+    borderColor: columnColors.accent,
     borderRadius: 4,
   },
   columnCategoryText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.accent,
+    color: columnColors.accent,
   },
   columnContent: {
     padding: Platform.OS === 'web' ? 30 : 25,
   },
   columnId: {
     fontSize: 12,
-    color: colors.textSub,
+    color: columnColors.textSub,
     marginBottom: 10,
     fontWeight: '500',
   },
   columnTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textMain,
+    color: columnColors.textMain,
     lineHeight: Platform.OS === 'web' ? 30 : 28,
     marginBottom: 15,
   },
   columnExcerpt: {
     fontSize: 13,
-    color: colors.textSub,
+    color: columnColors.textSub,
     lineHeight: Platform.OS === 'web' ? 24 : 22,
     marginBottom: 20,
   },
@@ -537,7 +538,7 @@ const styles = StyleSheet.create({
   },
   columnDate: {
     fontSize: 12,
-    color: colors.textSub,
+    color: columnColors.textSub,
     marginBottom: 12,
   },
   columnTags: {
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
   },
   columnTag: {
     fontSize: 12,
-    color: colors.textSub,
+    color: columnColors.textSub,
   },
   // もっと見るボタン
   loadMoreButton: {
@@ -555,10 +556,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 16,
     paddingHorizontal: 40,
-    backgroundColor: colors.accent,
+    backgroundColor: columnColors.accent,
     borderRadius: 30,
     marginBottom: 60,
-    shadowColor: colors.accent,
+    shadowColor: columnColors.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -567,7 +568,7 @@ const styles = StyleSheet.create({
   loadMoreText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.surface,
+    color: columnColors.surface,
     textAlign: 'center',
   },
 });

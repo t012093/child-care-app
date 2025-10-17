@@ -11,7 +11,8 @@ import {
   Linking
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Star, MapPin, Phone, Mail, Navigation } from 'lucide-react-native';
+import { ArrowLeft, Star, MapPin, Phone, Mail } from 'lucide-react-native';
+import FacilityMap from '../../components/FacilityMap';
 import { colors } from '../../constants/colors';
 import { sampleFacilities } from '../../constants/facilities';
 
@@ -51,6 +52,8 @@ export default function FacilityDetailScreen() {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
+      case 'temporary-care': return '一時保育';
+      case 'licensed': return '認可保育所';
       case 'nursery': return '保育園';
       case 'sick-child': return '病児保育';
       case 'clinic': return 'クリニック';
@@ -60,6 +63,8 @@ export default function FacilityDetailScreen() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
+      case 'temporary-care': return '#10B981';
+      case 'licensed': return '#3B82F6';
       case 'nursery': return '#4CAF50';
       case 'sick-child': return '#FF9800';
       case 'clinic': return '#2196F3';
@@ -143,6 +148,117 @@ export default function FacilityDetailScreen() {
           </View>
         )}
 
+        {/* 一時預かり情報 */}
+        {facility.type === 'temporary-care' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>一時預かり情報</Text>
+
+            {facility.openingHours && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>営業時間</Text>
+                <Text style={styles.detailValue}>平日: {facility.openingHours.weekday}</Text>
+                <Text style={styles.detailValue}>土曜日: {facility.openingHours.saturday}</Text>
+              </View>
+            )}
+
+            {facility.capacity && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>一時預かり定員</Text>
+                <Text style={styles.detailValue}>{facility.capacity}名</Text>
+              </View>
+            )}
+
+            {facility.ageRange && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>対象年齢</Text>
+                <Text style={styles.detailValue}>{facility.ageRange}</Text>
+              </View>
+            )}
+
+            {facility.hasLunch !== undefined && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>給食提供</Text>
+                <Text style={styles.detailValue}>{facility.hasLunch ? 'あり' : 'なし'}</Text>
+              </View>
+            )}
+
+            {facility.provider && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>運営</Text>
+                <Text style={styles.detailValue}>{facility.provider}</Text>
+              </View>
+            )}
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteText}>📞 施設に直接お申込みください</Text>
+              <Text style={styles.noteSubText}>料金や詳細は施設にお問い合わせください</Text>
+            </View>
+          </View>
+        )}
+
+        {/* 認可保育所情報 */}
+        {facility.type === 'licensed' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>認可保育所情報</Text>
+
+            {facility.openingHours && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>開所時間</Text>
+                <Text style={styles.detailValue}>平日: {facility.openingHours.weekday}</Text>
+                <Text style={styles.detailValue}>土曜日: {facility.openingHours.saturday}</Text>
+              </View>
+            )}
+
+            {facility.capacity && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>定員</Text>
+                <Text style={styles.detailValue}>{facility.capacity}名</Text>
+              </View>
+            )}
+
+            {facility.ageRange && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>対象年齢</Text>
+                <Text style={styles.detailValue}>{facility.ageRange}</Text>
+              </View>
+            )}
+
+            {facility.hasLunch !== undefined && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>給食提供</Text>
+                <Text style={styles.detailValue}>{facility.hasLunch ? 'あり' : 'なし'}</Text>
+              </View>
+            )}
+
+            {facility.provider && (
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>運営</Text>
+                <Text style={styles.detailValue}>{facility.provider}</Text>
+              </View>
+            )}
+
+            {facility.pdfTemplateUrl && (
+              <TouchableOpacity
+                style={styles.pdfButton}
+                onPress={() => {
+                  if (Platform.OS === 'web') {
+                    window.open(facility.pdfTemplateUrl, '_blank');
+                  } else {
+                    Linking.openURL(facility.pdfTemplateUrl);
+                  }
+                }}
+              >
+                <Text style={styles.pdfButtonText}>📄 申込書PDFをダウンロード</Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteText}>📋 利用申込みについて</Text>
+              <Text style={styles.noteSubText}>お住まいの区の健康・子ども課でお申込みください</Text>
+            </View>
+          </View>
+        )}
+
         {/* Contact & Access Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>施設情報</Text>
@@ -179,13 +295,17 @@ export default function FacilityDetailScreen() {
           )}
         </View>
 
-        {/* Map Placeholder */}
+        {/* Map */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>アクセス</Text>
-          <View style={styles.mapPlaceholder}>
-            <Navigation size={32} color={colors.accent} />
-            <Text style={styles.mapText}>地図表示エリア</Text>
-            <Text style={styles.mapSubText}>Googleマップ連携予定</Text>
+          <View style={styles.mapWrapper}>
+            <FacilityMap
+              facilities={[facility]}
+              selectedFacilityId={facility.id}
+              center={{ lat: facility.lat, lng: facility.lng }}
+              height={300}
+              zoom={15}
+            />
           </View>
         </View>
 
@@ -364,23 +484,60 @@ const styles = StyleSheet.create({
   linkText: {
     color: colors.accent,
   },
-  mapPlaceholder: {
-    height: 200,
-    backgroundColor: '#F3F4F6',
+  mapWrapper: {
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
   },
-  mapText: {
+  detailItem: {
+    marginBottom: 16,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textMain,
+    marginBottom: 4,
+  },
+  detailValue: {
     fontSize: 16,
     color: colors.textMain,
-    marginTop: 8,
-    fontWeight: '500',
+    lineHeight: 22,
+    marginBottom: 2,
   },
-  mapSubText: {
+  noteBox: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: colors.accentSoft,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  noteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textMain,
+    marginBottom: 4,
+  },
+  noteSubText: {
     fontSize: 14,
     color: colors.textSub,
-    marginTop: 4,
+  },
+  pdfButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pdfButtonText: {
+    color: colors.surface,
+    fontSize: 16,
+    fontWeight: '600',
   },
   notFound: {
     flex: 1,

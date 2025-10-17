@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import { MapPin, Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../constants/colors';
@@ -9,8 +9,10 @@ interface FacilityListItemProps {
   facility: Facility;
 }
 
-export default function FacilityListItem({ facility }: FacilityListItemProps) {
+function FacilityListItem({ facility }: FacilityListItemProps) {
   const router = useRouter();
+  const [imageError, setImageError] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   return (
     <View style={styles.wrapper}>
@@ -19,7 +21,28 @@ export default function FacilityListItem({ facility }: FacilityListItemProps) {
         onPress={() => router.push(`/facility/${facility.id}`)}
         activeOpacity={0.9}
       >
-        <Image source={{ uri: facility.imageUrl }} style={styles.image} />
+        <View style={styles.imageContainer}>
+          {!imageError ? (
+            <Animated.Image
+              source={{ uri: facility.imageUrl }}
+              style={[styles.image, { opacity: fadeAnim }]}
+              onLoad={() => {
+                Animated.timing(fadeAnim, {
+                  toValue: 1,
+                  duration: 300,
+                  useNativeDriver: true,
+                }).start();
+              }}
+              onError={() => {
+                setImageError(true);
+              }}
+            />
+          ) : (
+            <View style={[styles.image, styles.imageErrorPlaceholder]}>
+              <Text style={styles.imageErrorText}>📷</Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.content}>
           <Text style={styles.name}>{facility.name}</Text>
@@ -67,11 +90,24 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  imageContainer: {
+    position: 'relative',
+    width: Platform.OS === 'web' ? 80 : 60,
+    height: Platform.OS === 'web' ? 80 : 60,
+  },
   image: {
     width: Platform.OS === 'web' ? 80 : 60,
     height: Platform.OS === 'web' ? 80 : 60,
     borderRadius: 8,
     backgroundColor: colors.accentSoft,
+  },
+  imageErrorPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  imageErrorText: {
+    fontSize: 24,
   },
   content: {
     flex: 1,
@@ -120,4 +156,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+});
+
+// React.memoで不要な再レンダリングを防止
+export default React.memo(FacilityListItem, (prevProps, nextProps) => {
+  // IDとimageURLが同じなら再レンダリングしない
+  return (
+    prevProps.facility.id === nextProps.facility.id &&
+    prevProps.facility.imageUrl === nextProps.facility.imageUrl
+  );
 });

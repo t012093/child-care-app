@@ -17,6 +17,42 @@ export interface User {
     allergies?: string[];
     medicalInfo?: string;
     photo?: string;
+    dailyLife?: {
+      eating: string;
+      weaning: string;
+      nursing: string;
+      toilet: string;
+    };
+    vaccines?: {
+      progress: number;
+      total: number;
+    };
+    sleep?: {
+      wakeUp: string;
+      nap: string;
+      bedtime: string;
+    };
+    sizes?: {
+      diaper: string;
+      clothes: string;
+    };
+    preferences?: {
+      likes: string[];
+      dislikes: string[];
+      comfortItems?: string;
+      sleepRoutine?: string;
+      dietaryRestrictions?: string;
+    };
+    development?: {
+      milestones: {
+        title: string;
+        achieved: boolean;
+      }[];
+    };
+    health?: {
+      currentTemperature?: string;
+      lastCheckDate?: string;
+    };
   }>;
 }
 
@@ -98,6 +134,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               allergies: ['卵', 'ピーナッツ'],
               medicalInfo: 'アレルギー薬を常備',
               photo: 'https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=600',
+              dailyLife: {
+                eating: "箸 (自立)",
+                weaning: "完了",
+                nursing: "卒乳済み",
+                toilet: "トイレ",
+              },
+              vaccines: {
+                progress: 12,
+                total: 14,
+              },
+              sleep: {
+                wakeUp: "6:30",
+                nap: "13:00-15:00",
+                bedtime: "20:00",
+              },
+              sizes: {
+                diaper: "パンツ",
+                clothes: "100cm",
+              },
+              preferences: {
+                likes: ["サッカー", "恐竜図鑑", "お絵かき"],
+                dislikes: ["野菜（特にピーマン）", "大きな音"],
+                comfortItems: "恐竜のぬいぐるみ",
+                sleepRoutine: "絵本を2冊読んでから寝る",
+                dietaryRestrictions: "卵・ピーナッツアレルギー",
+              },
+              development: {
+                milestones: [
+                  { title: "複雑な文章を話す", achieved: true },
+                  { title: "片足でバランスを取る", achieved: true },
+                  { title: "ハサミで紙を切る", achieved: true },
+                  { title: "トイレを自分で使う", achieved: true },
+                  { title: "簡単な数を数える", achieved: true },
+                ],
+              },
+              health: {
+                currentTemperature: "36.7℃",
+                lastCheckDate: "2025-10-04",
+              },
             },
             {
               id: 'demo-child-2',
@@ -106,6 +181,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               allergies: [],
               medicalInfo: '',
               photo: 'https://images.pexels.com/photos/1912868/pexels-photo-1912868.jpeg?auto=compress&cs=tinysrgb&w=600',
+              dailyLife: {
+                eating: "箸 (自立)",
+                weaning: "完了",
+                nursing: "卒乳済み",
+                toilet: "トイレ",
+              },
+              vaccines: {
+                progress: 14,
+                total: 14,
+              },
+              sleep: {
+                wakeUp: "6:00",
+                nap: "なし",
+                bedtime: "20:30",
+              },
+              sizes: {
+                diaper: "パンツ",
+                clothes: "110cm",
+              },
+              preferences: {
+                likes: ["ピアノ", "絵本", "ダンス"],
+                dislikes: ["暗い場所"],
+                comfortItems: "ピンクのタオルケット",
+                sleepRoutine: "音楽を聴きながら寝る",
+                dietaryRestrictions: "なし",
+              },
+              development: {
+                milestones: [
+                  { title: "ひらがなを読む", achieved: true },
+                  { title: "自転車に乗る", achieved: true },
+                  { title: "簡単な計算をする", achieved: true },
+                  { title: "お手伝いをする", achieved: true },
+                ],
+              },
+              health: {
+                currentTemperature: "36.5℃",
+                lastCheckDate: "2025-10-04",
+              },
             },
           ],
         };

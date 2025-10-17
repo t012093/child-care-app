@@ -103,6 +103,109 @@ app/
 
 ## PDF自動入力機能の実装要件
 
+### 📋 PDF申請書の2つのアプローチ
+
+札幌市の保育制度申請書類は、以下の2つの方式で対応します：
+
+#### アプローチ1: 統一テンプレートPDF（TypeScript自動入力方式）
+
+**対象**: 札幌市が統一様式を提供している申請書類
+
+**対象書類例**:
+- 給付認定等申請書（2号・3号認定用）
+- 就労証明書（札幌市指定様式）
+- 復職予定申立書
+- マイナンバー記入・貼付用紙
+- 介護・看護申立書
+- 求職活動申告書兼同意書
+- 転入に関する誓約書
+
+**実装方法**:
+1. **フォーム入力画面をTypeScriptで実装**（`app/application/new.tsx`等）
+2. ユーザーが入力したデータを収集
+3. **Web版のみ**: pdf-libを使用してPDFに自動入力・生成
+4. プレビュー・ダウンロード提供
+
+```typescript
+// データ構造例
+interface SapporoApplicationData {
+  // 保護者情報
+  parentName: string;
+  parentPhone: string;
+  parentAddress: string;
+
+  // お子様情報
+  childName: string;
+  childBirthDate: string;
+
+  // 保育必要性証明
+  employmentStatus: 'employed' | 'self-employed' | 'job-seeking';
+  employerName?: string;
+  workingHours?: string;
+}
+
+// PDF生成（Web版のみ）
+if (Platform.OS === 'web') {
+  const { PDFDocument } = await import('pdf-lib');
+  const templateBytes = await fetch(require('../../assets/templates/application_form.pdf'));
+  const pdfDoc = await PDFDocument.load(await templateBytes.arrayBuffer());
+  const form = pdfDoc.getForm();
+
+  // フィールド自動入力
+  form.getTextField('parent_name').setText(data.parentName);
+  form.getTextField('child_name').setText(data.childName);
+  // ...
+
+  const pdfBytes = await pdfDoc.save();
+  // プレビュー・ダウンロード
+}
+```
+
+**メリット**:
+- ユーザーは一度入力すれば複数書類に自動反映可能
+- 入力ミス削減
+- 入力データの再利用（Supabase保存）
+
+#### アプローチ2: 施設固有PDF（クリック方式）
+
+**対象**: 施設ごとに独自の申込書がある場合
+
+**対象施設例**:
+- 一時保育（各保育園独自様式）
+- 企業主導型保育（各施設独自様式）
+- 一部の認定こども園
+
+**実装方法**:
+1. 施設情報テーブルに`pdfTemplateUrl`フィールドを追加
+2. 管理者が施設ごとにPDFテンプレートをアップロード
+3. ユーザーは施設ページから直接PDFをダウンロード
+4. 手動でPDFに記入して施設へ提出
+
+```typescript
+// 施設データ構造
+interface Facility {
+  id: string;
+  name: string;
+  type: 'temporary_care' | 'corporate_led' | 'licensed';
+  pdfTemplateUrl?: string; // 施設独自の申込書PDF URL
+}
+
+// ダウンロード機能
+const downloadFacilityPdf = async (facility: Facility) => {
+  if (facility.pdfTemplateUrl) {
+    // PDFをダウンロード
+    const response = await fetch(facility.pdfTemplateUrl);
+    const blob = await response.blob();
+    // ファイル保存処理
+  }
+};
+```
+
+**メリット**:
+- 施設ごとの多様なフォーマットに柔軟対応
+- 実装がシンプル
+- 施設側の更新に即座に対応可能
+
 ### 📄 自治体PDFフォーム対応
 
 #### 1. PDF配置場所

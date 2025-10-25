@@ -9,7 +9,8 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft, Download, FileText } from 'lucide-react-native';
 import Footer from '../../../../components/Footer';
 import { colors } from '../../../../constants/colors';
@@ -22,20 +23,30 @@ import {
 
 export default function EmploymentCertificatePreviewScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
   const [formData, setFormData] = useState<EmploymentCertificateData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    // URLパラメータからデータをデコード
-    try {
-      const decodedData = JSON.parse(decodeURIComponent(id as string));
-      setFormData(decodedData);
-    } catch (error) {
-      console.error('Failed to parse form data:', error);
-      Alert.alert('エラー', 'データの読み込みに失敗しました');
-    }
-  }, [id]);
+    // AsyncStorageからデータを読み込み
+    const loadData = async () => {
+      try {
+        const savedData = await AsyncStorage.getItem('employment_certificate_draft');
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          setFormData(parsedData);
+        } else {
+          Alert.alert('エラー', 'データが見つかりません');
+          router.back();
+        }
+      } catch (error) {
+        console.error('Failed to load draft:', error);
+        Alert.alert('エラー', 'データの読み込みに失敗しました');
+        router.back();
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleDownload = async () => {
     if (!formData) {
@@ -43,39 +54,23 @@ export default function EmploymentCertificatePreviewScreen() {
       return;
     }
 
-    if (Platform.OS !== 'web') {
-      Alert.alert(
-        '機能制限',
-        'Excel自動入力機能はWeb版でのみ利用可能です。\nテンプレートをダウンロードして手動で入力してください。',
-        [
-          { text: 'キャンセル', style: 'cancel' },
-          {
-            text: 'テンプレートダウンロード',
-            onPress: handleDownloadTemplate,
-          },
-        ]
-      );
-      return;
-    }
-
     setIsGenerating(true);
 
     try {
-      const buffer = await generateEmploymentCertificateExcel(formData);
+      const filename = `就労証明書_テンプレート.xlsx`;
+      await downloadTemplateExcel(filename);
 
-      if (!buffer) {
-        throw new Error('Excel生成に失敗しました');
-      }
-
-      const filename = `就労証明書_${formData.parentName}_${formData.issueDate}.xlsx`;
-      await downloadExcel(buffer, filename);
-
-      Alert.alert('成功', 'Excelファイルをダウンロードしました');
+      Alert.alert(
+        'ダウンロード完了',
+        'テンプレートをダウンロードしました。\n\n' +
+        '下記の入力内容を参考に、Excelファイルに手動で入力してください。',
+        [{ text: 'OK' }]
+      );
     } catch (error) {
-      console.error('Excel generation error:', error);
+      console.error('Template download error:', error);
       Alert.alert(
         'エラー',
-        'Excelファイルの生成に失敗しました。\n' +
+        'テンプレートのダウンロードに失敗しました。\n' +
           (error instanceof Error ? error.message : '不明なエラー')
       );
     } finally {
@@ -83,16 +78,6 @@ export default function EmploymentCertificatePreviewScreen() {
     }
   };
 
-  const handleDownloadTemplate = async () => {
-    try {
-      const filename = `就労証明書_テンプレート.xlsx`;
-      await downloadTemplateExcel(filename);
-      Alert.alert('成功', 'テンプレートをダウンロードしました');
-    } catch (error) {
-      console.error('Template download error:', error);
-      Alert.alert('エラー', 'テンプレートのダウンロードに失敗しました');
-    }
-  };
 
   if (!formData) {
     return (
@@ -120,9 +105,11 @@ export default function EmploymentCertificatePreviewScreen() {
           <View style={styles.noticeCard}>
             <FileText size={20} color={colors.accent} />
             <Text style={styles.noticeText}>
-              {Platform.OS === 'web'
-                ? 'この内容でExcelファイルを生成します。内容を確認の上、ダウンロードしてください。'
-                : 'モバイル版では自動入力機能は未対応です。テンプレートをダウンロードして手動で入力してください。'}
+              下記の入力内容を確認してください。
+              {'\n\n'}
+              就労証明書のExcelテンプレートは、お勤め先の会社または札幌市のWebサイトからダウンロードしてください。
+              {'\n\n'}
+              この画面の内容を参考に、Excelファイルに手動で入力してください。
             </Text>
           </View>
 
@@ -218,21 +205,10 @@ export default function EmploymentCertificatePreviewScreen() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.secondaryButton}
+          style={[styles.primaryButton, styles.primaryButtonFull]}
           onPress={() => router.back()}
         >
-          <Text style={styles.secondaryButtonText}>戻って編集</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={handleDownload}
-          disabled={isGenerating}
-        >
-          <Download size={20} color="white" />
-          <Text style={styles.primaryButtonText}>
-            {isGenerating ? '生成中...' : 'ダウンロード'}
-          </Text>
+          <Text style={styles.primaryButtonText}>戻って編集</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -347,6 +323,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
+  },
+  primaryButtonFull: {
+    width: '100%',
   },
   primaryButtonText: {
     fontSize: 16,

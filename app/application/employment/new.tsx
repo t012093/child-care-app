@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft } from 'lucide-react-native';
 import Footer from '../../../components/Footer';
 import { colors } from '../../../constants/colors';
@@ -64,10 +65,15 @@ export default function NewEmploymentCertificateScreen() {
     }
   };
 
-  const handleSubmit = () => {
-    // データをエンコードしてプレビューへ
-    const encodedData = encodeURIComponent(JSON.stringify(formData));
-    router.push(`/application/employment/preview/${encodedData}`);
+  const handleSubmit = async () => {
+    try {
+      // データをAsyncStorageに一時保存
+      await AsyncStorage.setItem('employment_certificate_draft', JSON.stringify(formData));
+      // プレビュー画面へ遷移
+      router.push('/application/employment/preview/draft');
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    }
   };
 
   const renderStepIndicator = () => (

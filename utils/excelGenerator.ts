@@ -1,127 +1,67 @@
 import { Platform } from 'react-native';
-import {
-  EmploymentCertificateData,
-  employmentCertificateMappings,
-} from './excelFieldMappings';
+import { EmploymentCertificateData } from './excelFieldMappings';
 
 /**
- * Excelテンプレートを読み込む
- * Web版・モバイル版共通でMetro asset systemを使用
+ * 就労証明書のExcelテンプレートをダウンロード
+ *
+ * 注: 現在はテンプレートファイルのダウンロードのみ対応
+ * 自動入力機能は技術的制約により未実装
+ *
+ * @param filename - ダウンロードするファイル名
  */
-async function loadExcelTemplate(): Promise<ArrayBuffer | null> {
-  try {
-    // Metro asset systemで配信されるURLを取得
-    const asset = require('../assets/templates/employment_certificate.xlsx');
+export async function downloadTemplateExcel(filename: string): Promise<void> {
+  // Web版専用実装
+  if (Platform.OS !== 'web') {
+    console.warn('Excel template download is only available on web platform');
+    throw new Error('この機能はWeb版でのみ利用可能です');
+  }
 
-    // Web版・モバイル版ともにfetchで取得
-    const response = await fetch(asset);
+  try {
+    // Metro Asset Systemを使用（.xlsxをassetExtsに追加済み）
+    const templateAsset = require('../assets/templates/employment_certificate.xlsx');
+
+    console.log('Downloading Excel template from Metro asset:', templateAsset);
+
+    // fetchで取得
+    const response = await fetch(templateAsset);
     if (!response.ok) {
-      console.warn('Excel template not found');
-      return null;
+      throw new Error(`Template not found: ${response.status}`);
     }
-    return await response.arrayBuffer();
+
+    const blob = await response.blob();
+
+    // ダウンロード
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    console.log('Template downloaded successfully');
   } catch (error) {
-    console.error('Excel template loading error:', error);
-    return null;
+    console.error('Template download failed:', error);
+    throw error;
   }
 }
 
 /**
- * 名前付きセルに値を設定
- * ExcelJSを使用してExcelファイルの名前付きセルに値を書き込みます
- */
-async function fillNamedCells(
-  workbook: any,
-  data: EmploymentCertificateData
-): Promise<void> {
-  // 全てのワークシートを取得
-  workbook.eachSheet((worksheet: any) => {
-    // データフィールドごとに処理
-    Object.entries(employmentCertificateMappings).forEach(
-      ([dataKey, namedCell]) => {
-        const value = data[dataKey as keyof EmploymentCertificateData];
-        if (!value) return;
-
-        try {
-          // 名前付きセルを検索
-          const definedNames = workbook.definedNames.model;
-          const namedRange = definedNames[namedCell];
-
-          if (namedRange) {
-            // セルのアドレスを取得
-            const cellAddress = namedRange.ranges?.[0];
-            if (cellAddress) {
-              const cell = worksheet.getCell(cellAddress);
-              if (cell) {
-                cell.value = String(value);
-              }
-            }
-          } else {
-            // 名前付きセルが見つからない場合は警告を出すが続行
-            console.warn(
-              `Named cell not found: ${namedCell} for field ${dataKey}`
-            );
-          }
-        } catch (error) {
-          console.warn(
-            `Error setting value for named cell ${namedCell}:`,
-            error
-          );
-        }
-      }
-    );
-  });
-}
-
-/**
- * 就労証明書のExcelファイルを生成（Web版のみ）
+ * 就労証明書のExcelファイルを生成（現在は未対応）
+ *
+ * 技術的制約により、現在はテンプレートダウンロードのみ対応
+ * ユーザーは手動でExcelに入力してください
  *
  * @param data - フォーム入力データ
- * @returns 生成されたExcelファイルのArrayBuffer（失敗時はnull）
+ * @returns null（常に失敗）
  */
 export async function generateEmploymentCertificateExcel(
   data: EmploymentCertificateData
 ): Promise<ArrayBuffer | null> {
-  // モバイル版では未対応
-  if (Platform.OS !== 'web') {
-    console.warn(
-      'Excel generation is only available on web platform. Use template download on mobile.'
-    );
-    return null;
-  }
-
-  try {
-    // Web版でのみExcelJSを動的import
-    const ExcelJS = await import('exceljs');
-
-    // テンプレート読み込み
-    const templateBuffer = await loadExcelTemplate();
-    if (!templateBuffer) {
-      console.error('Failed to load Excel template');
-      return null;
-    }
-
-    // Workbookを作成してテンプレートを読み込み
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(templateBuffer);
-
-    // 名前付きセルに値を設定
-    await fillNamedCells(workbook, data);
-
-    // Excelファイルをバッファに書き込み
-    const buffer = await workbook.xlsx.writeBuffer();
-    return buffer;
-  } catch (error) {
-    console.error('Excel generation failed:', error);
-    return null;
-  }
+  console.warn('Excel auto-fill feature is not available. Please download the template and fill manually.');
+  return null;
 }
 
 /**
- * Excelファイルをダウンロード（Web版）
- *
- * @param buffer - Excelファイルのバッファ
- * @param filename - ダウンロードするファイル名
+ * Excelファイルをダウンロード（ヘルパー関数）
  */
 export async function downloadExcel(
   buffer: ArrayBuffer,
@@ -138,38 +78,16 @@ export async function downloadExcel(
     link.click();
     URL.revokeObjectURL(url);
   } else {
-    // モバイル版: expo-sharing等を使用（今後実装予定）
     console.log('Mobile Excel download not implemented yet');
   }
 }
 
 /**
- * 就労証明書Excelファイルのダウンロード用URL生成（プレビュー用）
- *
- * @param buffer - Excelファイルのバッファ
- * @returns Blob URL
+ * 就労証明書Excelファイルのダウンロード用URL生成
  */
 export function createExcelBlobUrl(buffer: ArrayBuffer): string {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
   return URL.createObjectURL(blob);
-}
-
-/**
- * テンプレートExcelファイルのダウンロード（入力なし）
- *
- * @param filename - ダウンロードするファイル名
- */
-export async function downloadTemplateExcel(filename: string): Promise<void> {
-  try {
-    const templateBuffer = await loadExcelTemplate();
-    if (!templateBuffer) {
-      throw new Error('Template not found');
-    }
-    await downloadExcel(templateBuffer, filename);
-  } catch (error) {
-    console.error('Template download failed:', error);
-    throw error;
-  }
 }

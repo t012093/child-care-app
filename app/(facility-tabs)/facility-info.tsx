@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { Building2, MapPin, Phone, Clock, Users } from 'lucide-react-native';
+import { Building2, MapPin, Phone, Clock, Users, ChevronLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export default function FacilityInfoScreen() {
-  const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
+  const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
 
   // フォームの状態
@@ -45,6 +47,16 @@ export default function FacilityInfoScreen() {
     <SafeAreaView style={styles.container}>
       <View style={[styles.header, containerStyle]}>
         <View style={styles.headerTop}>
+          {/* モバイル版のみ戻るボタン表示 */}
+          {!isTablet && (
+            <TouchableOpacity
+              onPress={() => router.push('/(facility-tabs)/dashboard' as any)}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <ChevronLeft size={24} color={facilityColors.primary} strokeWidth={2.5} />
+            </TouchableOpacity>
+          )}
           <Building2 size={24} color={facilityColors.primary} />
           <Text style={styles.headerTitle}>施設情報</Text>
         </View>
@@ -188,6 +200,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: -4,
   },
   headerTitle: {
     fontSize: 22,

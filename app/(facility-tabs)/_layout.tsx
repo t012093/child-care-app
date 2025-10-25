@@ -1,12 +1,14 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Tabs, useRouter, usePathname } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { LayoutDashboard, Calendar, Building2, Settings } from 'lucide-react-native';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export default function FacilityTabsLayout() {
   const { isTablet } = useResponsive();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Web版用のヘッダー
   const FacilityHeader = () => {
@@ -24,6 +26,73 @@ export default function FacilityTabsLayout() {
             <Text style={styles.welcomeText}>施設管理ダッシュボード</Text>
           </View>
         </View>
+      </View>
+    );
+  };
+
+  // Web版用のサイドナビゲーション
+  const SideNavigation = () => {
+    if (!isTablet) return null;
+
+    const navItems = [
+      {
+        key: 'dashboard',
+        label: 'ダッシュボード',
+        icon: LayoutDashboard,
+        path: '/(facility-tabs)/dashboard'
+      },
+      {
+        key: 'reservations',
+        label: '予約管理',
+        icon: Calendar,
+        path: '/(facility-tabs)/reservations'
+      },
+      {
+        key: 'facility-info',
+        label: '施設情報',
+        icon: Building2,
+        path: '/(facility-tabs)/facility-info'
+      },
+      {
+        key: 'settings',
+        label: '設定',
+        icon: Settings,
+        path: '/(facility-tabs)/settings'
+      },
+    ];
+
+    return (
+      <View style={styles.sideNav}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.path;
+
+            return (
+              <TouchableOpacity
+                key={item.key}
+                style={[
+                  styles.sideNavItem,
+                  isActive && styles.sideNavItemActive,
+                ]}
+                onPress={() => router.push(item.path as any)}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  size={22}
+                  color={isActive ? facilityColors.primary : facilityColors.textSub}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <Text style={[
+                  styles.sideNavLabel,
+                  isActive && styles.sideNavLabelActive,
+                ]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
     );
   };
@@ -87,42 +156,57 @@ export default function FacilityTabsLayout() {
   return (
     <>
       <FacilityHeader />
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-        }}
-        tabBar={TabBar}
-      >
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: 'ダッシュボード',
-          }}
-        />
-        <Tabs.Screen
-          name="reservations"
-          options={{
-            title: '予約管理',
-          }}
-        />
-        <Tabs.Screen
-          name="facility-info"
-          options={{
-            title: '施設情報',
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: '設定',
-          }}
-        />
-      </Tabs>
+      <View style={styles.layoutContainer}>
+        <SideNavigation />
+        <View style={[styles.contentContainer, isTablet && styles.contentWithSideNav]}>
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+            }}
+            tabBar={TabBar}
+          >
+            <Tabs.Screen
+              name="dashboard"
+              options={{
+                title: 'ダッシュボード',
+              }}
+            />
+            <Tabs.Screen
+              name="reservations"
+              options={{
+                title: '予約管理',
+              }}
+            />
+            <Tabs.Screen
+              name="facility-info"
+              options={{
+                title: '施設情報',
+              }}
+            />
+            <Tabs.Screen
+              name="settings"
+              options={{
+                title: '設定',
+              }}
+            />
+          </Tabs>
+        </View>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  layoutContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  contentWithSideNav: {
+    marginLeft: 0, // サイドナビの分だけマージン（サイドナビがabsoluteなので不要）
+  },
   webHeader: {
     backgroundColor: facilityColors.surface,
     borderBottomWidth: 1,
@@ -163,6 +247,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: facilityColors.textMain,
+  },
+  sideNav: {
+    width: 240,
+    backgroundColor: facilityColors.surface,
+    borderRightWidth: 1,
+    borderRightColor: facilityColors.accentSoft,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  sideNavItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  sideNavItemActive: {
+    backgroundColor: facilityColors.primarySoft,
+  },
+  sideNavLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: facilityColors.textSub,
+  },
+  sideNavLabelActive: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: facilityColors.primary,
   },
   tabBar: {
     flexDirection: 'row',

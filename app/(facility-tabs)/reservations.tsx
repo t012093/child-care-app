@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Calendar, Filter } from 'lucide-react-native';
+import { Calendar, Filter, ChevronLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import ReservationListItem, { Reservation } from '../../components/ReservationListItem';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -8,7 +9,8 @@ import { useResponsive } from '../../hooks/useResponsive';
 type FilterTab = 'today' | 'week' | 'month' | 'all';
 
 export default function ReservationsScreen() {
-  const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
+  const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
+  const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState<FilterTab>('today');
 
   // サンプルデータ
@@ -78,6 +80,16 @@ export default function ReservationsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={[styles.header, containerStyle]}>
         <View style={styles.headerTop}>
+          {/* モバイル版のみ戻るボタン表示 */}
+          {!isTablet && (
+            <TouchableOpacity
+              onPress={() => router.push('/(facility-tabs)/dashboard' as any)}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <ChevronLeft size={24} color={facilityColors.primary} strokeWidth={2.5} />
+            </TouchableOpacity>
+          )}
           <Calendar size={24} color={facilityColors.primary} />
           <Text style={styles.headerTitle}>予約管理</Text>
         </View>
@@ -157,6 +169,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: -4,
   },
   headerTitle: {
     fontSize: 22,

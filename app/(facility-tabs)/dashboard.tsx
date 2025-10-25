@@ -1,41 +1,51 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Calendar, TrendingUp, CheckCircle, Bell, Plus } from 'lucide-react-native';
-import FacilityStatCard from '../../components/FacilityStatCard';
-import ReservationListItem, { Reservation } from '../../components/ReservationListItem';
+import FacilityStatCardWithTrend from '../../components/FacilityStatCardWithTrend';
+import ReservationLineChart from '../../components/charts/LineChart';
+import ReservationPieChart from '../../components/charts/PieChart';
+import HourlyUsageBarChart from '../../components/charts/BarChart';
+import TimelineSchedule, { TimelineReservation } from '../../components/TimelineSchedule';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useRouter } from 'expo-router';
+import { useDashboardStats } from '../../hooks/useDashboardStats';
 
 export default function FacilityDashboard() {
   const router = useRouter();
   const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
+  const stats = useDashboardStats();
 
-  // サンプルデータ
-  const todayReservations: Reservation[] = [
+  // タイムラインスケジュール用のモックデータ
+  const timelineReservations: TimelineReservation[] = [
     {
       id: '1',
-      time: '09:00',
+      startTime: '09:00',
+      endTime: '12:00',
       childName: '山田太郎',
       parentName: '山田花子',
       status: 'confirmed',
       type: '一時預かり',
+      allergies: ['卵', '乳製品'],
     },
     {
       id: '2',
-      time: '10:30',
+      startTime: '10:30',
+      endTime: '15:30',
       childName: '佐藤次郎',
       parentName: '佐藤美咲',
-      status: 'confirmed',
+      status: 'checked_in',
       type: '一時預かり',
     },
     {
       id: '3',
-      time: '14:00',
+      startTime: '14:00',
+      endTime: '15:00',
       childName: '鈴木三郎',
       parentName: '鈴木愛',
       status: 'pending',
       type: '見学',
+      medicalNotes: '喘息の傾向あり',
     },
   ];
 
@@ -54,6 +64,16 @@ export default function FacilityDashboard() {
     },
   ];
 
+  const handleCheckIn = (id: string) => {
+    console.log('Check in:', id);
+    // TODO: 実際のチェックイン処理
+  };
+
+  const handleCheckOut = (id: string) => {
+    console.log('Check out:', id);
+    // TODO: 実際のチェックアウト処理
+  };
+
   const containerStyle = {
     paddingHorizontal: horizontalPadding,
   };
@@ -70,52 +90,58 @@ export default function FacilityDashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* 統計カードセクション */}
+        {/* 統計カードセクション（トレンド付き） */}
         <View style={[containerStyle, styles.statsSection]}>
           <Text style={styles.sectionTitle}>施設統計</Text>
           <View style={styles.statsGrid}>
-            <FacilityStatCard
+            <FacilityStatCardWithTrend
               icon={Calendar}
               label="本日の予約"
-              value={todayReservations.length}
+              value={stats.today.total}
               subtext="件"
               color={facilityColors.primary}
+              trend={stats.today.trend}
             />
-            <FacilityStatCard
+            <FacilityStatCardWithTrend
               icon={TrendingUp}
               label="今週の予約"
-              value={18}
+              value={stats.thisWeek.total}
               subtext="件"
               color="#4ECDC4"
+              trend={stats.thisWeek.trend}
             />
-            <FacilityStatCard
+            <FacilityStatCardWithTrend
               icon={CheckCircle}
               label="空き状況"
-              value="◯"
-              subtext="空きあり"
+              value={stats.availability.status}
+              subtext={`残り${stats.availability.remainingSlots}枠`}
               color="#10B981"
             />
           </View>
         </View>
 
-        {/* 本日の予約リスト */}
+        {/* 予約推移グラフ */}
         <View style={[sectionStyle, containerStyle]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>本日の予約</Text>
-            <TouchableOpacity onPress={() => router.push('/(facility-tabs)/reservations' as any)}>
-              <Text style={styles.seeAllText}>すべて見る</Text>
-            </TouchableOpacity>
-          </View>
+          <ReservationLineChart data={stats.weeklyReservations} />
+        </View>
 
-          <View style={styles.reservationList}>
-            {todayReservations.map((reservation) => (
-              <ReservationListItem
-                key={reservation.id}
-                reservation={reservation}
-                onPress={(id) => console.log('Reservation pressed:', id)}
-              />
-            ))}
+        {/* 予約タイプ別円グラフと時間帯別棒グラフ */}
+        <View style={[containerStyle, styles.chartsRow]}>
+          <View style={styles.chartHalf}>
+            <ReservationPieChart data={stats.reservationsByType} />
           </View>
+          <View style={styles.chartHalf}>
+            <HourlyUsageBarChart data={stats.hourlyUsage} />
+          </View>
+        </View>
+
+        {/* タイムラインスケジュール */}
+        <View style={[sectionStyle, containerStyle]}>
+          <TimelineSchedule
+            reservations={timelineReservations}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+          />
         </View>
 
         {/* 通知セクション */}
@@ -200,6 +226,14 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     gap: 12,
+  },
+  chartsRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+  },
+  chartHalf: {
+    flex: 1,
   },
   reservationList: {
     backgroundColor: facilityColors.surface,

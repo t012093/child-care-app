@@ -8,14 +8,14 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { Settings as SettingsIcon, User, Bell, Lock, HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
+import { Settings as SettingsIcon, User, Bell, Lock, HelpCircle, LogOut, ChevronRight, ChevronLeft } from 'lucide-react-native';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
+  const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
 
   const handleLogout = () => {
     Alert.alert(
@@ -89,6 +89,16 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={[styles.header, containerStyle]}>
         <View style={styles.headerTop}>
+          {/* モバイル版のみ戻るボタン表示 */}
+          {!isTablet && (
+            <TouchableOpacity
+              onPress={() => router.push('/(facility-tabs)/dashboard' as any)}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <ChevronLeft size={24} color={facilityColors.primary} strokeWidth={2.5} />
+            </TouchableOpacity>
+          )}
           <SettingsIcon size={24} color={facilityColors.primary} />
           <Text style={styles.headerTitle}>設定</Text>
         </View>
@@ -177,6 +187,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: -4,
   },
   headerTitle: {
     fontSize: 22,

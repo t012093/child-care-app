@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, User, ChevronRight } from 'lucide-react-native';
+import { Clock, User, ChevronRight, CheckSquare, Square } from 'lucide-react-native';
 import { facilityColors } from '../constants/colors';
+import { Reservation as ReservationType } from '../types/reservation';
 
+// 互換性のため、古い型も残す
 export interface Reservation {
   id: string;
   time: string;
@@ -13,8 +15,11 @@ export interface Reservation {
 }
 
 interface ReservationListItemProps {
-  reservation: Reservation;
+  reservation: Reservation | ReservationType;
   onPress?: (id: string) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -46,18 +51,46 @@ const getStatusLabel = (status: string) => {
 export default function ReservationListItem({
   reservation,
   onPress,
+  selectionMode = false,
+  isSelected = false,
+  onToggleSelection,
 }: ReservationListItemProps) {
   const statusColor = getStatusColor(reservation.status);
 
+  // 新しい型の場合は startTime を使用、古い型の場合は time を使用
+  const displayTime = 'startTime' in reservation ? reservation.startTime : reservation.time;
+
+  const handlePress = () => {
+    if (selectionMode && onToggleSelection) {
+      onToggleSelection(reservation.id);
+    } else if (onPress) {
+      onPress(reservation.id);
+    }
+  };
+
   return (
     <TouchableOpacity
-      style={styles.container}
-      onPress={() => onPress?.(reservation.id)}
+      style={[
+        styles.container,
+        selectionMode && isSelected && styles.containerSelected,
+      ]}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
+      {/* 選択モード時のチェックボックス */}
+      {selectionMode && (
+        <View style={styles.checkboxSection}>
+          {isSelected ? (
+            <CheckSquare size={22} color={facilityColors.primary} />
+          ) : (
+            <Square size={22} color={facilityColors.textSub} />
+          )}
+        </View>
+      )}
+
       <View style={styles.timeSection}>
         <Clock size={18} color={facilityColors.textSub} />
-        <Text style={styles.time}>{reservation.time}</Text>
+        <Text style={styles.time}>{displayTime}</Text>
       </View>
 
       <View style={styles.detailSection}>
@@ -79,7 +112,9 @@ export default function ReservationListItem({
         </View>
       </View>
 
-      <ChevronRight size={20} color={facilityColors.textSub} />
+      {!selectionMode && (
+        <ChevronRight size={20} color={facilityColors.textSub} />
+      )}
     </TouchableOpacity>
   );
 }
@@ -97,6 +132,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  containerSelected: {
+    backgroundColor: `${facilityColors.primary}10`,
+    borderWidth: 2,
+    borderColor: facilityColors.primary,
+  },
+  checkboxSection: {
+    marginRight: 12,
   },
   timeSection: {
     flexDirection: 'row',

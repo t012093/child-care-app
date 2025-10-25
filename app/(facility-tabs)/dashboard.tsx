@@ -101,6 +101,7 @@ export default function FacilityDashboard() {
               subtext="件"
               color={facilityColors.primary}
               trend={stats.today.trend}
+              index={0}
             />
             <FacilityStatCardWithTrend
               icon={TrendingUp}
@@ -109,6 +110,7 @@ export default function FacilityDashboard() {
               subtext="件"
               color="#4ECDC4"
               trend={stats.thisWeek.trend}
+              index={1}
             />
             <FacilityStatCardWithTrend
               icon={CheckCircle}
@@ -116,6 +118,7 @@ export default function FacilityDashboard() {
               value={stats.availability.status}
               subtext={`残り${stats.availability.remainingSlots}枠`}
               color="#10B981"
+              index={2}
             />
           </View>
         </View>

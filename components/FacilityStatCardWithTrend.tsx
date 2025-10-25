@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { facilityColors } from '../constants/colors';
 import { Trend } from '../hooks/useDashboardStats';
+import { useFadeInUp } from '../hooks/useAnimatedEntrance';
 
 interface FacilityStatCardWithTrendProps {
   icon: LucideIcon;
@@ -11,6 +13,7 @@ interface FacilityStatCardWithTrendProps {
   subtext?: string;
   color?: string;
   trend?: Trend;
+  index?: number;
 }
 
 export default function FacilityStatCardWithTrend({
@@ -20,7 +23,9 @@ export default function FacilityStatCardWithTrend({
   subtext,
   color = facilityColors.primary,
   trend,
+  index = 0,
 }: FacilityStatCardWithTrendProps) {
+  const animatedStyle = useFadeInUp(index * 100);
   const getTrendColor = () => {
     if (!trend) return facilityColors.textSub;
     switch (trend.direction) {
@@ -42,7 +47,7 @@ export default function FacilityStatCardWithTrend({
     : null;
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, animatedStyle]}>
       <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
         <Icon size={24} color={color} strokeWidth={2} />
       </View>
@@ -60,7 +65,7 @@ export default function FacilityStatCardWithTrend({
           </Text>
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,17 +1,28 @@
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-import { Search } from 'lucide-react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { Search, X } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 
 interface SearchBarProps {
   placeholder?: string;
   onSearch?: (text: string) => void;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  onClear?: () => void;
 }
 
-export default function SearchBar({ 
-  placeholder = 'キーワードで検索', 
-  onSearch 
+export default function SearchBar({
+  placeholder = 'キーワードで検索',
+  onSearch,
+  value,
+  onChangeText,
+  onClear,
 }: SearchBarProps) {
+  const handleChange = (text: string) => {
+    if (onChangeText) onChangeText(text);
+    if (onSearch) onSearch(text);
+  };
+
   return (
     <View style={styles.container}>
       <Search size={20} color={colors.textSub} style={styles.icon} />
@@ -19,8 +30,15 @@ export default function SearchBar({
         style={styles.input}
         placeholder={placeholder}
         placeholderTextColor={colors.textSub}
-        onChangeText={onSearch}
+        value={value}
+        onChangeText={handleChange}
+        returnKeyType="search"
       />
+      {value && value.length > 0 && onClear && (
+        <TouchableOpacity onPress={onClear} style={styles.clearButton}>
+          <X size={20} color={colors.textSub} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -48,5 +66,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: colors.textMain,
+  },
+  clearButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
   },
 });

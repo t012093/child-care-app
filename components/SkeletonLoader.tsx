@@ -108,6 +108,46 @@ export function FacilityListItemSkeleton() {
   );
 }
 
+// 予約管理用スケルトン
+export function ReservationListItemSkeleton() {
+  return (
+    <View style={styles.reservationListItem}>
+      <View style={styles.timeSection}>
+        <SkeletonLoader width={60} height={16} />
+      </View>
+      <View style={styles.reservationContent}>
+        <SkeletonLoader width="70%" height={16} />
+        <View style={styles.reservationMeta}>
+          <SkeletonLoader width="30%" height={12} />
+          <SkeletonLoader width="25%" height={12} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export function ReservationListSkeleton() {
+  return (
+    <View>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <ReservationListItemSkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
+export function StatCardSkeleton() {
+  return (
+    <View style={styles.statCard}>
+      <SkeletonLoader width={40} height={40} borderRadius={20} />
+      <View style={{ marginTop: 12 }}>
+        <SkeletonLoader width="60%" height={12} />
+        <SkeletonLoader width="80%" height={24} style={{ marginTop: 8 }} />
+      </View>
+    </View>
+  );
+}
+
 export function HomeSkeleton() {
   return (
     <View style={styles.homeContainer}>
@@ -219,5 +259,30 @@ const styles = StyleSheet.create({
   facilityListContent: {
     flex: 1,
     marginLeft: 12,
+  },
+  reservationListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  timeSection: {
+    marginRight: 12,
+  },
+  reservationContent: {
+    flex: 1,
+  },
+  reservationMeta: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
   },
 });

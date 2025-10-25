@@ -15,10 +15,14 @@ import {
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Building2, Mail, Lock, Phone, MapPin, ArrowLeft } from 'lucide-react-native';
+import { Picker } from '@react-native-picker/picker';
 import { facilityColors } from '@/constants/colors';
+import { supabase } from '@/lib/supabase';
 
 export default function FacilityRegisterScreen() {
   const [facilityName, setFacilityName] = useState('');
+  const [facilityType, setFacilityType] = useState<string>('nursery');
+  const [district, setDistrict] = useState<string>('central');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,6 +36,7 @@ export default function FacilityRegisterScreen() {
   };
 
   const handleRegister = async () => {
+    // バリデーション
     if (!facilityName.trim()) {
       Alert.alert('入力エラー', '施設名を入力してください。');
       return;
@@ -74,20 +79,103 @@ export default function FacilityRegisterScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: 実際のAPI呼び出し
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 1. Supabase Authでユーザー登録
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password.trim(),
+        options: {
+          data: {
+            facility_name: facilityName.trim(),
+            role: 'facility_owner',
+          },
+        },
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        Alert.alert('登録エラー', authError.message || '認証に失敗しました。');
+        return;
+      }
+
+      if (!authData.user) {
+        Alert.alert('登録エラー', 'ユーザー登録に失敗しました。');
+        return;
+      }
+
+      const userId = authData.user.id;
+
+      // 2. facilitiesテーブルに施設情報を登録
+      const { data: facilityData, error: facilityError } = await supabase
+        .from('facilities')
+        .insert({
+          name: facilityName.trim(),
+          type: facilityType as any,
+          district: district as any,
+          address: address.trim(),
+          phone: phoneNumber.trim(),
+          email: email.trim(),
+          // デフォルト値（位置情報は後で追加）
+          lat: 43.064, // 札幌市中央区の中心座標（仮）
+          lng: 141.346,
+          category: facilityType,
+          stock: 0,
+          featured: false,
+          rating: 0,
+          images: [],
+          owner_user_id: userId,
+          status: 'pending_approval', // 承認待ち
+          has_lunch: false,
+        })
+        .select()
+        .single();
+
+      if (facilityError) {
+        console.error('Facility error:', facilityError);
+        Alert.alert('登録エラー', '施設情報の登録に失敗しました。');
+        // ユーザーは作成されたので、ログアウト
+        await supabase.auth.signOut();
+        return;
+      }
+
+      if (!facilityData) {
+        Alert.alert('登録エラー', '施設情報の登録に失敗しました。');
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // 3. facility_staffテーブルにオーナーとして登録
+      const { error: staffError } = await supabase
+        .from('facility_staff')
+        .insert({
+          facility_id: facilityData.id,
+          user_id: userId,
+          role: 'owner',
+          name: facilityName.trim(), // 施設名をスタッフ名として使用（後で変更可能）
+          email: email.trim(),
+          phone: phoneNumber.trim(),
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        });
+
+      if (staffError) {
+        console.error('Staff error:', staffError);
+        // エラーでも続行（後で手動追加可能）
+      }
+
+      // 4. 登録完了メッセージ
       Alert.alert(
         '登録完了',
-        '施設の新規登録が完了しました。担当者より連絡をお待ちください。',
+        '施設の新規登録が完了しました。\n\n確認メールをご確認の上、メール内のリンクをクリックしてアカウントを有効化してください。',
         [
           {
             text: 'OK',
-            onPress: () => router.push('/nursery_entrance' as any),
+            onPress: () => router.push('/facility-login' as any),
           },
         ]
       );
     } catch (error) {
-      Alert.alert('登録エラー', '登録に失敗しました。もう一度お試しください。');
+      console.error('Unexpected error:', error);
+      Alert.alert('登録エラー', '予期しないエラーが発生しました。もう一度お試しください。');
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +230,45 @@ export default function FacilityRegisterScreen() {
                     placeholder="〇〇保育園"
                     placeholderTextColor={facilityColors.textSub}
                   />
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>施設タイプ *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={facilityType}
+                    onValueChange={(value) => setFacilityType(value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="認可保育所" value="licensed" />
+                    <Picker.Item label="認可外保育施設" value="nursery" />
+                    <Picker.Item label="一時預かり" value="temporary-care" />
+                    <Picker.Item label="病児保育" value="sick-child" />
+                    <Picker.Item label="クリニック" value="clinic" />
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>区 *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={district}
+                    onValueChange={(value) => setDistrict(value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="中央区" value="central" />
+                    <Picker.Item label="北区" value="north" />
+                    <Picker.Item label="東区" value="east" />
+                    <Picker.Item label="白石区" value="white-stone" />
+                    <Picker.Item label="厚別区" value="atsubetsu" />
+                    <Picker.Item label="豊平区" value="toyohira" />
+                    <Picker.Item label="清田区" value="kiyota" />
+                    <Picker.Item label="南区" value="south" />
+                    <Picker.Item label="西区" value="west" />
+                    <Picker.Item label="手稲区" value="teine" />
+                  </Picker>
                 </View>
               </View>
 
@@ -348,6 +475,17 @@ const styles = StyleSheet.create({
       paddingVertical: 12,
       fontSize: 15,
     }),
+  },
+  pickerWrapper: {
+    backgroundColor: facilityColors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: facilityColors.accentSoft,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: Platform.OS === 'ios' ? 180 : 50,
+    color: facilityColors.textMain,
   },
   infoBox: {
     backgroundColor: facilityColors.accentSoft,

@@ -64,7 +64,7 @@ export default function KnowledgeSection({ onItemPress }: KnowledgeSectionProps)
     },
     isDesktop && {
       maxWidth: 1024,
-      alignSelf: 'center',
+      alignSelf: 'center' as const,
       width: '100%',
     },
   ];

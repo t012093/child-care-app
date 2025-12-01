@@ -18,10 +18,12 @@ import { Building2, Mail, Lock, Phone, MapPin, ArrowLeft } from 'lucide-react-na
 import { Picker } from '@react-native-picker/picker';
 import { facilityColors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
+import { prefectures, getDistrictsByPrefecture } from '@/constants/regions';
 
 export default function FacilityRegisterScreen() {
   const [facilityName, setFacilityName] = useState('');
   const [facilityType, setFacilityType] = useState<string>('nursery');
+  const [prefecture, setPrefecture] = useState<string>('hokkaido');
   const [district, setDistrict] = useState<string>('central');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +31,9 @@ export default function FacilityRegisterScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // 選択された都道府県に応じた市区町村リストを取得
+  const availableDistricts = getDistrictsByPrefecture(prefecture);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -105,18 +110,27 @@ export default function FacilityRegisterScreen() {
       const userId = authData.user.id;
 
       // 2. facilitiesテーブルに施設情報を登録
+      // 都道府県名を取得
+      const prefectureName = prefectures.find(p => p.id === prefecture)?.name || '北海道';
+
+      // デフォルト座標（都道府県に応じて設定）
+      const defaultCoords = prefecture === 'toyama'
+        ? { lat: 36.695, lng: 137.213 } // 富山市中心
+        : { lat: 43.064, lng: 141.346 }; // 札幌市中心
+
       const { data: facilityData, error: facilityError } = await supabase
         .from('facilities')
         .insert({
           name: facilityName.trim(),
           type: facilityType as any,
-          district: district as any,
+          prefecture: prefectureName,
+          district: district,
           address: address.trim(),
           phone: phoneNumber.trim(),
           email: email.trim(),
           // デフォルト値（位置情報は後で追加）
-          lat: 43.064, // 札幌市中央区の中心座標（仮）
-          lng: 141.346,
+          lat: defaultCoords.lat,
+          lng: defaultCoords.lng,
           category: facilityType,
           stock: 0,
           featured: false,
@@ -251,23 +265,38 @@ export default function FacilityRegisterScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>区 *</Text>
+                <Text style={styles.inputLabel}>都道府県 *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={prefecture}
+                    onValueChange={(value) => {
+                      setPrefecture(value);
+                      // 都道府県が変更されたら、最初の市区町村を選択
+                      const districts = getDistrictsByPrefecture(value);
+                      if (districts.length > 0) {
+                        setDistrict(districts[0].id);
+                      }
+                    }}
+                    style={styles.picker}
+                  >
+                    {prefectures.map((pref) => (
+                      <Picker.Item key={pref.id} label={pref.name} value={pref.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>市区町村 *</Text>
                 <View style={styles.pickerWrapper}>
                   <Picker
                     selectedValue={district}
                     onValueChange={(value) => setDistrict(value)}
                     style={styles.picker}
                   >
-                    <Picker.Item label="中央区" value="central" />
-                    <Picker.Item label="北区" value="north" />
-                    <Picker.Item label="東区" value="east" />
-                    <Picker.Item label="白石区" value="white-stone" />
-                    <Picker.Item label="厚別区" value="atsubetsu" />
-                    <Picker.Item label="豊平区" value="toyohira" />
-                    <Picker.Item label="清田区" value="kiyota" />
-                    <Picker.Item label="南区" value="south" />
-                    <Picker.Item label="西区" value="west" />
-                    <Picker.Item label="手稲区" value="teine" />
+                    {availableDistricts.map((dist) => (
+                      <Picker.Item key={dist.id} label={dist.label} value={dist.id} />
+                    ))}
                   </Picker>
                 </View>
               </View>

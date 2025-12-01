@@ -17,6 +17,7 @@ export default function ReserveScreen() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     types: [],
+    prefectures: [],
     districts: [],
     ageRanges: [],
     hasSaturday: null,
@@ -57,6 +58,7 @@ export default function ReserveScreen() {
   const handleResetFilters = () => {
     setFilters({
       types: [],
+      prefectures: [],
       districts: [],
       ageRanges: [],
       hasSaturday: null,
@@ -68,6 +70,7 @@ export default function ReserveScreen() {
   // アクティブなフィルター数
   const activeFilterCount =
     filters.types.length +
+    filters.prefectures.length +
     filters.districts.length +
     filters.ageRanges.length +
     (filters.hasSaturday !== null ? 1 : 0) +

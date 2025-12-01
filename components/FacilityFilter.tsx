@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { colors } from '../constants/colors';
+import { prefectures, getDistrictsByPrefecture } from '../constants/regions';
 
 export interface FilterOptions {
   types: string[];
+  prefectures: string[];
   districts: string[];
   ageRanges: string[];
   hasSaturday: boolean | null;
@@ -19,22 +21,10 @@ interface FacilityFilterProps {
 const facilityTypes = [
   { id: 'temporary-care', label: '一時保育' },
   { id: 'licensed', label: '認可保育所' },
+  { id: 'kindergarten', label: '幼稚園' },
   { id: 'nursery', label: '保育園' },
   { id: 'sick-child', label: '病児保育' },
   { id: 'clinic', label: 'クリニック' },
-];
-
-const districts = [
-  { id: 'central', label: '中央区' },
-  { id: 'north', label: '北区' },
-  { id: 'east', label: '東区' },
-  { id: 'white-stone', label: '白石区' },
-  { id: 'atsubetsu', label: '厚別区' },
-  { id: 'toyohira', label: '豊平区' },
-  { id: 'kiyota', label: '清田区' },
-  { id: 'south', label: '南区' },
-  { id: 'west', label: '西区' },
-  { id: 'teine', label: '手稲区' },
 ];
 
 const ageRanges = [
@@ -52,11 +42,43 @@ const capacityRanges = [
 ];
 
 export default function FacilityFilter({ filters, onFilterChange, onReset }: FacilityFilterProps) {
+  // 選択された都道府県に応じた市区町村リストを動的に取得
+  const [availableDistricts, setAvailableDistricts] = useState<Array<{ id: string; label: string }>>([]);
+
+  useEffect(() => {
+    // 選択された都道府県がある場合、その市区町村リストを取得
+    if (filters.prefectures.length > 0) {
+      const allDistricts = filters.prefectures.flatMap(prefId => {
+        return getDistrictsByPrefecture(prefId);
+      });
+      setAvailableDistricts(allDistricts);
+    } else {
+      // 都道府県が未選択の場合は全都道府県の市区町村を表示
+      const allDistricts = prefectures.flatMap(pref => pref.districts);
+      setAvailableDistricts(allDistricts);
+    }
+  }, [filters.prefectures]);
+
   const toggleType = (typeId: string) => {
     const newTypes = filters.types.includes(typeId)
       ? filters.types.filter(t => t !== typeId)
       : [...filters.types, typeId];
     onFilterChange({ ...filters, types: newTypes });
+  };
+
+  const togglePrefecture = (prefectureId: string) => {
+    const newPrefectures = filters.prefectures.includes(prefectureId)
+      ? filters.prefectures.filter(p => p !== prefectureId)
+      : [...filters.prefectures, prefectureId];
+
+    // 都道府県が変更されたら、該当しない市区町村の選択を解除
+    let newDistricts = filters.districts;
+    if (!newPrefectures.includes(prefectureId)) {
+      const removedPrefDistricts = getDistrictsByPrefecture(prefectureId).map(d => d.id);
+      newDistricts = filters.districts.filter(d => !removedPrefDistricts.includes(d));
+    }
+
+    onFilterChange({ ...filters, prefectures: newPrefectures, districts: newDistricts });
   };
 
   const toggleDistrict = (districtId: string) => {
@@ -110,11 +132,37 @@ export default function FacilityFilter({ filters, onFilterChange, onReset }: Fac
         </View>
       </View>
 
-      {/* 区 */}
+      {/* 都道府県 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>区</Text>
+        <Text style={styles.sectionTitle}>都道府県</Text>
         <View style={styles.chipContainer}>
-          {districts.map(district => (
+          {prefectures.map(prefecture => (
+            <TouchableOpacity
+              key={prefecture.id}
+              style={[
+                styles.chip,
+                filters.prefectures.includes(prefecture.id) && styles.chipActive,
+              ]}
+              onPress={() => togglePrefecture(prefecture.id)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  filters.prefectures.includes(prefecture.id) && styles.chipTextActive,
+                ]}
+              >
+                {prefecture.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* 市区町村 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>市区町村</Text>
+        <View style={styles.chipContainer}>
+          {availableDistricts.map(district => (
             <TouchableOpacity
               key={district.id}
               style={[

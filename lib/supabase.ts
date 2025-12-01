@@ -40,7 +40,8 @@ export type Facility = {
   // 新規フィールド
   owner_user_id?: string;
   status: 'active' | 'inactive' | 'pending_approval';
-  district?: 'central' | 'north' | 'east' | 'white-stone' | 'atsubetsu' | 'toyohira' | 'kiyota' | 'south' | 'west' | 'teine';
+  prefecture?: string; // 都道府県（例: '北海道', '富山県'）
+  district?: string; // 市区町村（例: '中央区', '富山市'）
   opening_hours?: {
     weekday: string;
     saturday: string;

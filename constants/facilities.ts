@@ -1,7 +1,7 @@
 export interface Facility {
   id: string;
   name: string;
-  type: 'nursery' | 'sick-child' | 'clinic' | 'temporary-care' | 'licensed'; // 認可保育所追加
+  type: 'nursery' | 'sick-child' | 'clinic' | 'temporary-care' | 'licensed' | 'kindergarten'; // 幼稚園追加
   address: string;
   lat: number;
   lng: number;
@@ -11,13 +11,16 @@ export interface Facility {
   rating: number;
   imageUrl: string;
   distance?: number; // in km
-  // 新規フィールド
-  district?: 'central' | 'north' | 'east' | 'white-stone' | 'atsubetsu' | 'toyohira' | 'kiyota' | 'south' | 'west' | 'teine'; // 区
+  // 地域関連フィールド
+  prefecture?: string; // 都道府県（例: '北海道', '富山県'）
+  district?: string; // 市区町村（例: '中央区', '富山市', '高岡市'）
+  schoolDistrict?: string; // 校区（幼稚園用：例: '月岡', '速星', '水橋中部'）
+  websiteUrl?: string; // 施設HP URL
   openingHours?: {
     weekday: string;
     saturday: string;
   };
-  capacity?: number; // 一時預かり定員 / 認可保育所定員
+  capacity?: number; // 一時預かり定員 / 認可保育所定員 / 幼稚園定員
   ageRange?: string; // 対象年齢
   hasLunch?: boolean; // 給食提供
   provider?: string; // 設置者名
@@ -39,6 +42,7 @@ export const sampleFacilities: Facility[] = [
     description: '札幌市が運営する一時保育施設。産休明けから就学前まで幅広い年齢に対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '08:00～18:00',
@@ -60,6 +64,7 @@ export const sampleFacilities: Facility[] = [
     description: '認定こども園での一時預かり。１歳児から対応可能。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '08:00～18:00',
@@ -81,6 +86,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模保育園で定員60名。５か月から預かり可能。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '08:00～18:00',
@@ -103,6 +109,7 @@ export const sampleFacilities: Facility[] = [
     description: '札幌市北区の子育て支援センター。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/3933239/pexels-photo-3933239.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '08:00～18:00',
@@ -124,6 +131,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模保育園で一時預かり定員60名。土曜日も対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '08:00～18:00',
@@ -145,6 +153,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模認定こども園。一時預かり定員105名で産休明けから対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -167,6 +176,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから受け入れ可能。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '07:00～19:00',
@@ -189,6 +199,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '07:00～19:00',
@@ -211,6 +222,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から受け入れ可能。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -233,6 +245,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模認定こども園。定員105名。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -255,6 +268,7 @@ export const sampleFacilities: Facility[] = [
     description: '東区の認定こども園。生後5か月から受け入れ可能。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3933239/pexels-photo-3933239.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'east',
     openingHours: {
       weekday: '07:00～19:00',
@@ -278,6 +292,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '07:00～19:00',
@@ -300,6 +315,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '07:00～19:00',
@@ -322,6 +338,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模保育園。5か月から預かり可能。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'central',
     openingHours: {
       weekday: '07:00～19:00',
@@ -345,6 +362,7 @@ export const sampleFacilities: Facility[] = [
     description: '大規模保育園。土曜日も対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -367,6 +385,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -389,6 +408,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'north',
     openingHours: {
       weekday: '07:00～19:00',
@@ -412,6 +432,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'east',
     openingHours: {
       weekday: '07:00～19:00',
@@ -434,6 +455,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'east',
     openingHours: {
       weekday: '07:00～19:00',
@@ -456,6 +478,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'east',
     openingHours: {
       weekday: '07:00～19:00',
@@ -478,6 +501,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'east',
     openingHours: {
       weekday: '07:00～19:00',
@@ -501,6 +525,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'white-stone',
     openingHours: {
       weekday: '07:00～19:00',
@@ -523,6 +548,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'white-stone',
     openingHours: {
       weekday: '07:00～19:00',
@@ -545,6 +571,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'white-stone',
     openingHours: {
       weekday: '07:00～19:00',
@@ -567,6 +594,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'white-stone',
     openingHours: {
       weekday: '07:00～19:00',
@@ -589,6 +617,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'white-stone',
     openingHours: {
       weekday: '07:00～19:00',
@@ -612,6 +641,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'atsubetsu',
     openingHours: {
       weekday: '07:00～19:00',
@@ -634,6 +664,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'atsubetsu',
     openingHours: {
       weekday: '07:00～19:00',
@@ -656,6 +687,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'atsubetsu',
     openingHours: {
       weekday: '07:00～19:00',
@@ -678,6 +710,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'atsubetsu',
     openingHours: {
       weekday: '07:00～19:00',
@@ -700,6 +733,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。生後5か月から対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'atsubetsu',
     openingHours: {
       weekday: '07:00～19:00',
@@ -723,6 +757,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'toyohira',
     openingHours: {
       weekday: '07:00～19:00',
@@ -745,6 +780,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'toyohira',
     openingHours: {
       weekday: '07:00～19:00',
@@ -767,6 +803,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。1歳児から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'toyohira',
     openingHours: {
       weekday: '07:00～19:00',
@@ -789,6 +826,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'toyohira',
     openingHours: {
       weekday: '07:00～19:00',
@@ -811,6 +849,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'toyohira',
     openingHours: {
       weekday: '07:00～19:00',
@@ -834,6 +873,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'kiyota',
     openingHours: {
       weekday: '07:00～19:00',
@@ -856,6 +896,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'kiyota',
     openingHours: {
       weekday: '07:00～19:00',
@@ -878,6 +919,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'kiyota',
     openingHours: {
       weekday: '07:00～19:00',
@@ -900,6 +942,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'kiyota',
     openingHours: {
       weekday: '07:00～19:00',
@@ -922,6 +965,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'kiyota',
     openingHours: {
       weekday: '07:00～19:00',
@@ -945,6 +989,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'south',
     openingHours: {
       weekday: '07:00～19:00',
@@ -967,6 +1012,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'south',
     openingHours: {
       weekday: '07:00～19:00',
@@ -989,6 +1035,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'south',
     openingHours: {
       weekday: '07:00～20:00',
@@ -1011,6 +1058,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。生後5か月から対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'south',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1033,6 +1081,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'south',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1056,6 +1105,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'west',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1078,6 +1128,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'west',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1100,6 +1151,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'west',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1122,6 +1174,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'west',
     openingHours: {
       weekday: '07:00～20:00',
@@ -1144,6 +1197,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'west',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1167,6 +1221,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.8,
     imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'teine',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1189,6 +1244,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'teine',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1211,6 +1267,7 @@ export const sampleFacilities: Facility[] = [
     description: '幼保連携型認定こども園。生後5か月から対応。',
     rating: 4.7,
     imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'teine',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1233,6 +1290,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.5,
     imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'teine',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1255,6 +1313,7 @@ export const sampleFacilities: Facility[] = [
     description: '保育所型認定こども園。産休明けから対応。',
     rating: 4.6,
     imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '北海道',
     district: 'teine',
     openingHours: {
       weekday: '07:00～19:00',
@@ -1265,6 +1324,589 @@ export const sampleFacilities: Facility[] = [
     hasLunch: true,
     pdfTemplateUrl: require('../docs/facilities/sapporoninkahoiku/251001ninnkahoikusyoitirann.pdf'),
   },
+
+  // ============ 富山県の保育施設 ============
+  // 富山市
+  {
+    id: '300',
+    name: '富山市中央保育所',
+    type: 'licensed',
+    address: '富山県富山市新富町1丁目2-3',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-421-5430',
+    provider: '富山市',
+    description: '富山市が運営する認可保育所。産休明けから対応。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～18:30',
+    },
+    capacity: 90,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '301',
+    name: '認定こども園富山いずみ',
+    type: 'licensed',
+    address: '富山県富山市泉町1-5-10',
+    lat: 36.698,
+    lng: 137.208,
+    phone: '076-425-2222',
+    provider: '社会福祉法人富山いずみ福祉会',
+    description: '幼保連携型認定こども園。生後6か月から受け入れ可能。',
+    rating: 4.6,
+    imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    openingHours: {
+      weekday: '07:00～19:00',
+      saturday: '07:00～19:00',
+    },
+    capacity: 120,
+    ageRange: '生後６か月から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '302',
+    name: '富山大学附属幼稚園',
+    type: 'licensed',
+    address: '富山県富山市五福3190',
+    lat: 36.698,
+    lng: 137.185,
+    phone: '076-445-2802',
+    provider: '国立大学法人富山大学',
+    description: '国立大学附属の認定こども園。3歳児から対応。',
+    rating: 4.7,
+    imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-西部',
+    openingHours: {
+      weekday: '08:00～17:00',
+      saturday: '未実施',
+    },
+    capacity: 60,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '303',
+    name: '婦中ひまわり保育園',
+    type: 'licensed',
+    address: '富山県富山市婦中町速星450',
+    lat: 36.642,
+    lng: 137.173,
+    phone: '076-466-3030',
+    provider: '社会福祉法人ひまわり福祉会',
+    description: '婦中地域の保育園。産休明けから対応。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-婦中',
+    openingHours: {
+      weekday: '07:00～19:00',
+      saturday: '07:00～19:00',
+    },
+    capacity: 80,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '304',
+    name: '八尾さくら保育園',
+    type: 'licensed',
+    address: '富山県富山市八尾町井田126',
+    lat: 36.606,
+    lng: 137.197,
+    phone: '076-454-5050',
+    provider: '社会福祉法人八尾福祉会',
+    description: '八尾地域の認可保育園。自然豊かな環境で保育。',
+    rating: 4.6,
+    imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-八尾',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～18:30',
+    },
+    capacity: 60,
+    ageRange: '生後６か月から就学前まで',
+    hasLunch: true,
+  },
+
+  // 高岡市
+  {
+    id: '305',
+    name: '高岡市中央保育園',
+    type: 'licensed',
+    address: '富山県高岡市木津1090',
+    lat: 36.745,
+    lng: 137.024,
+    phone: '0766-25-1122',
+    provider: '高岡市',
+    description: '高岡市が運営する認可保育園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'takaoka',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～18:30',
+    },
+    capacity: 90,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '306',
+    name: '認定こども園高岡みどり',
+    type: 'licensed',
+    address: '富山県高岡市緑町5-1',
+    lat: 36.751,
+    lng: 137.019,
+    phone: '0766-22-3333',
+    provider: '社会福祉法人高岡緑福祉会',
+    description: '幼保連携型認定こども園。生後6か月から対応。',
+    rating: 4.7,
+    imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'takaoka',
+    openingHours: {
+      weekday: '07:00～19:00',
+      saturday: '07:00～19:00',
+    },
+    capacity: 150,
+    ageRange: '生後６か月から就学前まで',
+    hasLunch: true,
+  },
+
+  // 射水市
+  {
+    id: '307',
+    name: '射水市あおぞら保育園',
+    type: 'licensed',
+    address: '富山県射水市小島1200',
+    lat: 36.732,
+    lng: 137.088,
+    phone: '0766-52-4400',
+    provider: '射水市',
+    description: '射水市の公立保育園。産休明けから対応。',
+    rating: 4.4,
+    imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'imizu',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～18:30',
+    },
+    capacity: 70,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+
+  // 砺波市
+  {
+    id: '308',
+    name: '砺波市チューリップ保育園',
+    type: 'licensed',
+    address: '富山県砺波市栄町7-3',
+    lat: 36.643,
+    lng: 136.964,
+    phone: '0763-33-2200',
+    provider: '砺波市',
+    description: 'チューリップの町、砺波市の保育園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'tonami',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～12:30',
+    },
+    capacity: 80,
+    ageRange: '生後６か月から就学前まで',
+    hasLunch: true,
+  },
+
+  // 魚津市
+  {
+    id: '309',
+    name: '魚津市うおづっ子保育園',
+    type: 'licensed',
+    address: '富山県魚津市釈迦堂1-10-15',
+    lat: 36.826,
+    lng: 137.408,
+    phone: '0765-22-5500',
+    provider: '魚津市',
+    description: '魚津市の公立保育園。海の近くで自然体験も豊富。',
+    rating: 4.6,
+    imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'uozu',
+    openingHours: {
+      weekday: '07:30～18:30',
+      saturday: '07:30～18:30',
+    },
+    capacity: 90,
+    ageRange: '生後６か月から就学前まで',
+    hasLunch: true,
+  },
+
+  // ============ 富山市の幼稚園（富山市オープンデータより）============
+  {
+    id: '310',
+    name: '富山市立月岡幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市上千俵町508',
+    lat: 36.622,
+    lng: 137.253,
+    phone: '076-429-4959',
+    provider: '富山市',
+    description: '月岡校区の市立幼稚園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-南部',
+    schoolDistrict: '月岡',
+    websiteUrl: 'https://swa.city.toyama.toyama.jp/swas/index.php?frame=webindex&page=ePage&enc=ca03eba42a20feab',
+    capacity: 105,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '311',
+    name: '富山市立速星幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市婦中町速星706-1',
+    lat: 36.659,
+    lng: 137.156,
+    phone: '076-465-2183',
+    provider: '富山市',
+    description: '速星校区の市立幼稚園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-婦中',
+    schoolDistrict: '速星',
+    websiteUrl: 'https://swa.city.toyama.toyama.jp/swas/index.php?frame=webindex&page=ePage&enc=9d0a30e0e2e3d2ce',
+    capacity: 95,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '312',
+    name: '富山市立水橋幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市水橋舘町390-13',
+    lat: 36.77,
+    lng: 137.35,
+    phone: '076-478-0568',
+    provider: '富山市',
+    description: '水橋中部校区の市立幼稚園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-水橋',
+    schoolDistrict: '水橋中部',
+    websiteUrl: 'https://swa.city.toyama.toyama.jp/swas/index.php?frame=webindex&page=ePage&enc=0e0b50e9f3e1d4d0',
+    capacity: 105,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '313',
+    name: '富山大学教育学部附属幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市五艘1300',
+    lat: 36.708,
+    lng: 137.197,
+    phone: '076-445-2812',
+    provider: '国立大学法人富山大学',
+    description: '桜谷校区の国立大学附属幼稚園。',
+    rating: 4.7,
+    imageUrl: 'https://images.pexels.com/photos/296301/pexels-photo-296301.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '桜谷',
+    websiteUrl: 'https://www.fuzoku.u-toyama.ac.jp/fuzoku/fuzoku-yotien/',
+    capacity: 160,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '314',
+    name: 'あさひ幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市東石金町8-28',
+    lat: 36.69,
+    lng: 137.22,
+    phone: '076-425-1184',
+    provider: '学校法人あさひ学園',
+    description: '東部校区の私立幼稚園。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-東部',
+    schoolDistrict: '東部',
+    capacity: 25,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '315',
+    name: '愛護幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市山王町4-49',
+    lat: 36.687,
+    lng: 137.213,
+    phone: '076-423-4342',
+    provider: '学校法人愛護学園',
+    description: '中央校区の私立幼稚園。キリスト教保育を実践。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '中央',
+    websiteUrl: 'https://aigo-youchien.org/',
+    capacity: 15,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '316',
+    name: '五番町幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市古鍛冶町2-22',
+    lat: 36.688,
+    lng: 137.218,
+    phone: '076-421-8759',
+    provider: '学校法人五番町学園',
+    description: '中央校区の私立幼稚園。',
+    rating: 4.6,
+    imageUrl: 'https://images.pexels.com/photos/3662667/pexels-photo-3662667.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '中央',
+    capacity: 60,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '317',
+    name: '富山カワイ幼稚園',
+    type: 'kindergarten',
+    address: '富山県富山市向新庄町五丁目5-6',
+    lat: 36.705,
+    lng: 137.265,
+    phone: '076-451-5884',
+    provider: '学校法人富山新庄学園',
+    description: '新庄北校区の私立幼稚園。',
+    rating: 4.6,
+    imageUrl: 'https://images.pexels.com/photos/3038285/pexels-photo-3038285.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-東部',
+    schoolDistrict: '新庄北',
+    websiteUrl: 'https://toyamakawai.ed.jp/',
+    capacity: 150,
+    ageRange: '3歳児から就学前まで',
+    hasLunch: true,
+  },
+
+  // ============ 富山市の公立保育所（富山市オープンデータより）============
+  {
+    id: '318',
+    name: '雲雀ケ丘保育所',
+    type: 'licensed',
+    address: '富山県富山市鹿島町一丁目3-16',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-424-0472',
+    provider: '富山市',
+    description: '中央地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '芝園',
+    capacity: 100,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '319',
+    name: '清水保育所',
+    type: 'licensed',
+    address: '富山県富山市旭町10-17',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-423-1630',
+    provider: '富山市',
+    description: '中央地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '中央',
+    capacity: 95,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '320',
+    name: '柳町保育所',
+    type: 'licensed',
+    address: '富山県富山市於保多町1-23',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-432-7051',
+    provider: '富山市',
+    description: '中央地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '柳町',
+    capacity: 110,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '321',
+    name: '稲荷元町保育所',
+    type: 'licensed',
+    address: '富山県富山市稲荷元町二丁目13-13',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-441-6719',
+    provider: '富山市',
+    description: '中央地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-中央',
+    schoolDistrict: '柳町',
+    capacity: 105,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '322',
+    name: '岩瀬保育所',
+    type: 'licensed',
+    address: '富山県富山市岩瀬御蔵町1',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-437-9675',
+    provider: '富山市',
+    description: '北部地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-北部',
+    schoolDistrict: '岩瀬',
+    capacity: 90,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '323',
+    name: '浜黒崎保育所',
+    type: 'licensed',
+    address: '富山県富山市古志町三丁目1-3',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-437-9845',
+    provider: '富山市',
+    description: '北部地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-北部',
+    schoolDistrict: '大広田',
+    capacity: 70,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '324',
+    name: '双葉保育所',
+    type: 'licensed',
+    address: '富山県富山市草島256-1',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-435-0222',
+    provider: '富山市',
+    description: '和合地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-和合',
+    schoolDistrict: '草島',
+    capacity: 55,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '325',
+    name: '和合保育所',
+    type: 'licensed',
+    address: '富山県富山市布目4173',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-435-0386',
+    provider: '富山市',
+    description: '和合地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-和合',
+    schoolDistrict: '倉垣',
+    capacity: 55,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '326',
+    name: '呉羽保育所',
+    type: 'licensed',
+    address: '富山県富山市呉羽町2247-18',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-434-2446',
+    provider: '富山市',
+    description: '呉羽地区の保育施設。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-呉羽',
+    schoolDistrict: '呉羽',
+    capacity: 175,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
+  {
+    id: '327',
+    name: '長岡保育所',
+    type: 'licensed',
+    address: '富山県富山市呉羽町４９９０',
+    lat: 36.695,
+    lng: 137.213,
+    phone: '076-432-2593',
+    provider: '富山市',
+    description: '呉羽地区の保育施設。旧呉羽保育所から移転。',
+    rating: 4.5,
+    imageUrl: 'https://images.pexels.com/photos/1001914/pexels-photo-1001914.jpeg?auto=compress&cs=tinysrgb&w=600',
+    prefecture: '富山県',
+    district: 'toyama-呉羽',
+    schoolDistrict: '長岡',
+    capacity: 65,
+    ageRange: '産休明けから就学前まで',
+    hasLunch: true,
+  },
 ];
 
 // フィルタリング関数
@@ -1272,6 +1914,7 @@ export const filterFacilities = (
   facilities: Facility[],
   filters: {
     types: string[];
+    prefectures: string[];
     districts: string[];
     hasSaturday: boolean | null;
     capacityRange: string | null;
@@ -1283,7 +1926,23 @@ export const filterFacilities = (
       return false;
     }
 
-    // 区フィルター
+    // 都道府県フィルター
+    if (filters.prefectures.length > 0) {
+      if (!facility.prefecture) return false;
+
+      // 都道府県IDとマッチングするために、prefectureフィールドを使用
+      // facility.prefecture は '北海道' or '富山県' などの文字列
+      // filters.prefectures は ['hokkaido', 'toyama'] などのIDの配列
+      const prefectureMatches = filters.prefectures.some(prefId => {
+        if (prefId === 'hokkaido' && facility.prefecture === '北海道') return true;
+        if (prefId === 'toyama' && facility.prefecture === '富山県') return true;
+        return false;
+      });
+
+      if (!prefectureMatches) return false;
+    }
+
+    // 市区町村フィルター
     if (filters.districts.length > 0 && facility.district && !filters.districts.includes(facility.district)) {
       return false;
     }

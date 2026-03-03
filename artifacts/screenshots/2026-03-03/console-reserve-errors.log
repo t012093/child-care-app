@@ -1,0 +1,5 @@
+Total messages: 12 (Errors: 1, Warnings: 6)
+Returning 1 messages for level "error"
+
+[ERROR] Google Maps JavaScript API error: ApiProjectMapError
+https://developers.google.com/maps/documentation/javascript/error-messages#api-project-map-error @ http://127.0.0.1:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:901

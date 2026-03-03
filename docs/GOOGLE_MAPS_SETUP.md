@@ -1,196 +1,190 @@
-# Google Maps API セットアップガイド
+# Google Maps セットアップガイド
 
-## 概要
-Phase 1のGoogle Maps API統合が完了しました。施設検索画面と施設詳細画面に実際の地図が表示されます。
+このドキュメントは、Web と将来の iOS/Android で Google Maps の設定が混ざって問題にならないように、現在の実装と今後必要になる設定を分けて整理したものです。
 
-## 実装済み機能
-- ✅ 施設検索画面のマップ表示（複数施設マーカー）
-- ✅ 施設詳細画面のマップ表示（単一施設）
-- ✅ Web版対応（`@react-google-maps/api`）
-- ✅ モバイル版対応（`react-native-maps`）
+## 現在の実装
 
-## APIキー取得手順
+### Web
+- 埋め込み地図を使用しています
+- 実装ファイル: `components/FacilityMap.web.tsx`
+- 使用 API: `Maps JavaScript API`
+- 必要なキー: `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
-### 1. Google Cloud Consoleでプロジェクト作成
+### iOS / Android
+- 現在はネイティブ埋め込み地図を使っていません
+- 実装ファイル: `components/FacilityMap.tsx`
+- 現在の挙動: `Googleマップで開く` ボタンで外部マップを開く
+- そのため、現状の機能だけなら iOS / Android 用 Google Maps API キーは必須ではありません
 
-1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
-2. 新しいプロジェクトを作成（例: "child-app-dev"）
-3. プロジェクトを選択
+## 結論
 
-### 2. 必要なAPIを有効化
+今すぐ必要なのは Web 用キーだけです。
+iOS / Android 用キーは、将来ネイティブ埋め込み地図を実装するときに別で用意してください。
 
-以下のAPIを有効化してください：
+同じキーを全プラットフォームで使い回すより、以下のように分ける運用を推奨します。
 
-- **Maps JavaScript API**（Web版で使用）
-- **Maps SDK for iOS**（iOS版で使用）
-- **Maps SDK for Android**（Android版で使用）
-- **Places API**（将来の施設検索機能で使用）
+- Web 開発用キー
+- Web 本番用キー
+- iOS 用キー
+- Android 用キー
 
-手順：
-1. 左メニュー > "APIとサービス" > "ライブラリ"
-2. 上記APIを検索して有効化
+## このリポジトリの現状設定
 
-### 3. APIキーの作成
-
-1. 左メニュー > "APIとサービス" > "認証情報"
-2. "認証情報を作成" > "APIキー"をクリック
-3. 作成されたAPIキーをコピー
-
-### 4. APIキーの制限設定（推奨）
-
-セキュリティのため、APIキーに制限をかけることを推奨します：
-
-#### 開発用キー（テスト環境）
-- **アプリケーションの制限**: なし（開発中）
-- **APIの制限**: Maps JavaScript API, Maps SDK for iOS/Android, Places API
-
-#### 本番用キー（将来）
-- **Webキー**: HTTPリファラーで制限（例: `your-domain.com/*`）
-- **iOSキー**: iOSアプリで制限（バンドルID指定）
-- **Androidキー**: Androidアプリで制限（パッケージ名 + SHA-1指定）
-
-## 環境変数の設定
-
-### ステップ1: `.env.local`ファイルを編集
-
-プロジェクトルートの`.env.local`ファイルを開き、APIキーを設定：
+### ローカル Web
+`.env.local` に以下を設定します。
 
 ```bash
-# Google Maps API Key（Web版で使用）
-EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...あなたのAPIキー
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_web_api_key
 ```
 
-### ステップ2: `app.json`を編集（モバイル版）
+### Vercel
+本リポジトリの Vercel プロジェクト `child-care-app` には、以下の環境変数を登録済みです。
 
-`app.json`の該当箇所を編集：
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
+
+現在の公開 URL:
+
+```text
+https://child-care-app-eta.vercel.app
+```
+
+## Google Cloud で今すぐ必要な設定
+
+### 有効化する API
+今の Web 実装で必須なのはこれだけです。
+
+- `Maps JavaScript API`
+
+以下は将来ネイティブ埋め込み地図を入れる時に有効化します。
+
+- `Maps SDK for iOS`
+- `Maps SDK for Android`
+- `Places API`（施設検索強化時）
+
+## Web 用キーの制限設定
+
+### 推奨設定
+- Application restrictions: `Websites`
+- API restrictions: `Maps JavaScript API`
+
+### 開発用 referrer 例
+```text
+http://localhost:8081
+http://localhost:8081/*
+http://127.0.0.1:8081
+http://127.0.0.1:8081/*
+```
+
+### Vercel 本番用 referrer 例
+```text
+https://child-care-app-eta.vercel.app
+https://child-care-app-eta.vercel.app/*
+```
+
+Vercel の別エイリアスも使う場合は、実際にアクセスする URL を追加してください。
+
+## Vercel デプロイ時の注意
+
+- Google Maps の Web キーは `Website` 制限のままで正しいです
+- Expo アプリでも、Vercel で表示するのはブラウザ版なので `iOS app` 制限にはしません
+- 本番 URL が変わったら、Google Cloud 側の許可 referrer も更新してください
+
+## 将来 iOS に埋め込み地図を入れるとき
+
+現状では未使用ですが、後でネイティブ地図を実装するならこの順で進めます。
+
+1. `ios.bundleIdentifier` を決める
+2. Google Cloud で `Maps SDK for iOS` を有効化する
+3. iOS 専用の API キーを作る
+4. Application restrictions を `iOS apps` にする
+5. 対象の bundle identifier を登録する
+6. Expo 設定に iOS キーを入れる
+7. ネイティブアプリを再ビルドする
+
+### 重要
+- Web キーと iOS キーは分けてください
+- Web の `Website` 制限キーは iOS では使いません
+- iOS キーは bundle identifier が決まってから作るのが安全です
+
+## 将来 Android に埋め込み地図を入れるとき
+
+1. `android.package` を決める
+2. Google Cloud で `Maps SDK for Android` を有効化する
+3. Android 専用キーを作る
+4. Application restrictions を `Android apps` にする
+5. package name と SHA-1 を登録する
+6. Expo 設定に Android キーを入れる
+7. ネイティブアプリを再ビルドする
+
+## Expo 設定について
+
+現在の [app.json](../app.json) には以下のプレースホルダがあります。
 
 ```json
-{
-  "expo": {
-    "ios": {
-      "config": {
-        "googleMapsApiKey": "AIzaSy...あなたのAPIキー"
-      }
-    },
-    "android": {
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSy...あなたのAPIキー"
-        }
-      }
+"ios": {
+  "config": {
+    "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_API_KEY"
+  }
+},
+"android": {
+  "config": {
+    "googleMaps": {
+      "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY"
     }
   }
 }
 ```
 
-**注意**:
-- 本番環境では異なるキーを使用することを推奨
-- `.env.local`はgitにコミットしないこと（`.gitignore`で除外済み）
+ただし、これは現時点では未使用です。
+将来ネイティブ埋め込み地図を導入するまでは、Web 用キーだけ管理してください。
 
-## 開発サーバーの起動
-
-環境変数を変更した場合は、開発サーバーを再起動してください：
-
-```bash
-# 既存のサーバーを停止
-pkill -f expo
-
-# Web版を起動
-npm run web
-
-# モバイル版を起動（Expo Go）
-npm run iphone  # または npm run android
-```
-
-## 動作確認
-
-### Web版
-1. `npm run web`で起動
-2. http://localhost:8081 にアクセス
-3. "施設を探す"タブをクリック
-4. 地図が表示され、施設マーカーが表示されることを確認
-5. 施設をクリックして詳細画面に移動
-6. 施設の位置が地図上に表示されることを確認
-
-### モバイル版
-1. `npm run iphone`または`npm run android`で起動
-2. Expo Goアプリで開く
-3. "施設を探す"タブで地図が表示されることを確認
-4. 位置情報許可を求められた場合は許可
+ネイティブ対応を始める段階では、`app.json` に直接書くより `app.config.ts` に移して環境変数から読む形へ寄せるのを推奨します。
 
 ## トラブルシューティング
 
-### Web版で地図が表示されない
+### `RefererNotAllowedMapError`
+原因:
+- Google Cloud 側の許可 referrer に現在の URL が入っていない
 
-**症状**: 灰色の背景に"地図の読み込みに失敗しました"と表示される
+対処:
+- `https://child-care-app-eta.vercel.app`
+- `https://child-care-app-eta.vercel.app/*`
+- `http://localhost:8081`
+- `http://localhost:8081/*`
 
-**原因と対処**:
-1. APIキーが正しく設定されていない
-   - `.env.local`の`EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`を確認
-   - 開発サーバーを再起動
+を見直してください。
 
-2. Maps JavaScript APIが有効化されていない
-   - Google Cloud Consoleで"Maps JavaScript API"を有効化
+`/*` だけでなく、パスなしの URL も入れる方が安全です。
 
-3. APIキーの制限が厳しすぎる
-   - 開発中は制限を緩める（リファラー制限を一時的に解除）
+### `InvalidKeyMapError`
+原因:
+- API キーが無効
+- 別プロジェクトのキーを見ている
+- `Maps JavaScript API` が未有効化
 
-### モバイル版で地図が表示されない
+### iOS キーを入れたのに Web が直らない
+正常です。Web と iOS は別設定です。
+Web は `Website` 制限 + `Maps JavaScript API` を見ます。
 
-**症状**: "Google Maps not available"エラー
+### `app.json` にキーを書いたのに Web が直らない
+正常です。Web は `app.json` の `ios` / `android` 設定を使いません。
+Web は `.env.local` または Vercel の `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` を使います。
 
-**原因と対処**:
-1. `app.json`のAPIキーが設定されていない
-2. Maps SDK for iOS/Androidが有効化されていない
-3. ネイティブビルドが必要な場合がある（Expo Goでは制限あり）
+## 運用ルール
 
-### ブラウザコンソールのエラー
+後で詰まらないように、以下を守る運用にしてください。
 
-```
-Google Maps JavaScript API error: InvalidKeyMapError
-```
-- APIキーが無効です。正しいキーを設定してください
-
-```
-Google Maps JavaScript API error: RefererNotAllowedMapError
-```
-- リファラー制限でブロックされています。開発中は制限を緩めてください
-
-## APIキーの移行（個人→クライアント）
-
-将来、個人アカウントのAPIキーからクライアントアカウントのAPIキーに移行する場合：
-
-1. クライアントのGoogle Cloud Consoleで同様の手順でAPIキーを作成
-2. `.env.local`と`app.json`のキーを置き換え
-3. 開発サーバーを再起動
-4. 動作確認
-
-**注意点**:
-- 請求先アカウントの設定を確認
-- 使用量の上限アラートを設定（予期せぬ課金を防ぐ）
-- 本番環境ではAPIキーの制限を必ず設定
-
-## 料金について
-
-Google Maps Platformは従量課金制です：
-
-- **無料枠**: 月額$200分のクレジット（新規ユーザー）
-- **Maps JavaScript API**: 1,000リクエストあたり$7
-- **Places API**: 1,000リクエストあたり$17
-
-開発段階では無料枠内で十分ですが、本番環境では使用量監視を推奨します。
-
-## 次のステップ（Phase 2）
-
-将来実装予定の機能：
-- Google Places APIを使った施設検索
-- ルート案内（Directions API）
-- Google Calendar連携（予約同期）
-- 位置情報に基づく近隣施設自動検索
+- Web / iOS / Android のキーは分離する
+- Google Cloud の restriction は用途ごとに最小化する
+- Vercel の本番 URL が変わったら referrer を更新する
+- 将来ネイティブ地図を入れるまでは、iOS / Android キーを先に埋めない
 
 ## 参考リンク
 
-- [Google Maps Platform](https://developers.google.com/maps)
-- [@react-google-maps/api ドキュメント](https://react-google-maps-api-docs.netlify.app/)
-- [react-native-maps ドキュメント](https://github.com/react-native-maps/react-native-maps)
-- [Expo Location API](https://docs.expo.dev/versions/latest/sdk/location/)
+- Google Maps Platform: https://developers.google.com/maps
+- Maps JavaScript API: https://developers.google.com/maps/documentation/javascript
+- API キー制限: https://cloud.google.com/docs/authentication/api-keys
+- Maps API Security Best Practices: https://developers.google.com/maps/api-security-best-practices
+- Expo MapView: https://docs.expo.dev/versions/latest/sdk/map-view/

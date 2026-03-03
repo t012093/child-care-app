@@ -12,6 +12,15 @@
 
 ## クイックスタート
 
+起動後の画面確認には以下のドキュメントが便利です。
+
+- [スタートガイド](./docs/START_GUIDE.md)
+  - スクリーンショット付きで、起動後の主要導線を順に確認できます
+- [Web確認レポート](./docs/WEB_TEST_REPORT_20260303.md)
+  - 2026-03-03 時点の画面確認結果、不具合、保存済みキャプチャを確認できます
+- [Google Maps セットアップ](./docs/GOOGLE_MAPS_SETUP.md)
+  - Web と将来の iOS / Android で設定を混同しないための運用メモです
+
 ### 1. 依存関係のインストール
 
 ```bash
@@ -42,11 +51,19 @@ npm run web
 
 ブラウザで `http://localhost:8081` にアクセス
 
-#### 🌐 両方同時に起動
+#### 🌐 ローカルWeb開発
 
 ```bash
 npm run dev
 ```
+
+#### 🌍 Webをトンネル経由で公開
+
+```bash
+npm run dev:tunnel
+```
+
+`--tunnel` を使うコマンドでは `@expo/ngrok` が必要です。Expoが自動インストール後も認識できない場合は、新しいターミナルを開いて再実行してください。
 
 ### 3. デモモードでログイン
 
@@ -83,10 +100,11 @@ npm run dev
 |---------|------|------|
 | `npm start` | 基本的な開発サーバー起動 | ローカル開発 |
 | `npm run web` | Web版のみ起動 | ブラウザでの開発 |
+| `npm run dev` | Web版をキャッシュクリア付きで起動 | ローカルWeb開発 |
+| `npm run dev:tunnel` | Web版をトンネル付きで起動 | 別ネットワークへの共有 |
 | `npm run iphone` | iPhone/Android向け起動（トンネル付き） | モバイル開発（推奨） |
 | `npm run tunnel` | トンネルモードで起動 | 別ネットワークからアクセス |
 | `npm run mobile` | モバイル向け起動（トンネル付き） | モバイル開発 |
-| `npm run dev` | Web + トンネル同時起動 | フルスタック開発 |
 | `npm run all` | すべてのプラットフォーム起動 | 全環境テスト |
 
 ### ビルド・その他
@@ -142,6 +160,7 @@ npm run dev
 1. 開発マシンとスマートフォンが同じWi-Fiに接続されているか確認
 2. 異なるネットワークの場合は`npm run iphone`または`npm run tunnel`を使用
 3. キャッシュをクリアして再起動：`npx expo start --clear`
+4. `CommandError: Install @expo/ngrok@^4.1.0 and try again` が出る場合は、トンネル用の依存関係が見つかっていません。ローカル開発は `npm run dev` / `npm run web` を使い、トンネルが必要な場合は新しいターミナルで再度 `npm run dev:tunnel` を実行してください
 
 ### ポートが使用中の場合
 

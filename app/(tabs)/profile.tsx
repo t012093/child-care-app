@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
 import { ChevronRight, Phone, Mail, MessageSquare, LogOut, Settings } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/AuthContext';
+import { fetchParentReservations, ParentReservationSummary } from '../../lib/reservationService';
+import { STATUS_CONFIG } from '../../types/reservation';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Child {
   id: string;
@@ -63,6 +66,7 @@ function SupportCard() {
 export default function ProfileScreen() {
   const router = useRouter();
   const { logout, user } = useAuth();
+  const [reservations, setReservations] = useState<ParentReservationSummary[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -114,6 +118,39 @@ export default function ProfileScreen() {
       imageUrl: "https://images.pexels.com/photos/1912868/pexels-photo-1912868.jpeg?auto=compress&cs=tinysrgb&w=600"
     }
   ];
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+
+      const loadReservations = async () => {
+        if (!user?.id || user.id === 'demo-user') {
+          if (isMounted) {
+            setReservations([]);
+          }
+          return;
+        }
+
+        try {
+          const nextReservations = await fetchParentReservations(user.id);
+          if (isMounted) {
+            setReservations(nextReservations);
+          }
+        } catch (error) {
+          console.error('Failed to load reservations:', error);
+          if (isMounted) {
+            setReservations([]);
+          }
+        }
+      };
+
+      loadReservations();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [user?.id])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -172,6 +209,56 @@ export default function ProfileScreen() {
                 onPress={() => router.push(`/child/${child.id}`)}
               />
             ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>予約状況</Text>
+          <View style={styles.card}>
+            {reservations.length > 0 ? (
+              reservations.map((reservation, index) => {
+                const statusConfig = STATUS_CONFIG[reservation.status];
+
+                return (
+                  <View
+                    key={reservation.id}
+                    style={[
+                      styles.reservationItem,
+                      index === reservations.length - 1 && styles.reservationItemLast,
+                    ]}
+                  >
+                    <View style={styles.reservationHeader}>
+                      <Text style={styles.reservationFacility}>{reservation.facilityName}</Text>
+                      <View
+                        style={[
+                          styles.reservationStatusBadge,
+                          { backgroundColor: statusConfig.backgroundColor },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.reservationStatusText,
+                            { color: statusConfig.color },
+                          ]}
+                        >
+                          {statusConfig.label}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.reservationDetail}>
+                      {reservation.date} {reservation.startTime} - {reservation.endTime}
+                    </Text>
+                    <Text style={styles.reservationMeta}>
+                      {reservation.childName} / {reservation.type}
+                    </Text>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={styles.emptyReservationText}>
+                まだ予約はありません。施設詳細から予約を作成できます。
+              </Text>
+            )}
           </View>
         </View>
 
@@ -333,5 +420,50 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: colors.textMain,
+  },
+  reservationItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  reservationItemLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  reservationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 6,
+  },
+  reservationFacility: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textMain,
+  },
+  reservationStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  reservationStatusText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reservationDetail: {
+    fontSize: 14,
+    color: colors.textMain,
+    marginBottom: 4,
+  },
+  reservationMeta: {
+    fontSize: 13,
+    color: colors.textSub,
+  },
+  emptyReservationText: {
+    fontSize: 14,
+    color: colors.textSub,
+    lineHeight: 20,
   },
 });

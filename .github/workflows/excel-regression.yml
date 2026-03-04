@@ -1,0 +1,58 @@
+name: Excel Regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "assets/templates/employment_certificate.xlsx"
+      - "docs/examples/employment_fixed_input.json"
+      - "docs/examples/employment_variable_input.json"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/assert-xlsx-cells.js"
+      - "scripts/render-employment-certificate-poc.js"
+      - "scripts/test-employment-excel.js"
+      - "utils/excelFieldMappings.ts"
+      - "utils/excelGenerator.ts"
+  push:
+    branches: [main]
+    paths:
+      - "assets/templates/employment_certificate.xlsx"
+      - "docs/examples/employment_fixed_input.json"
+      - "docs/examples/employment_variable_input.json"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/assert-xlsx-cells.js"
+      - "scripts/render-employment-certificate-poc.js"
+      - "scripts/test-employment-excel.js"
+      - "utils/excelFieldMappings.ts"
+      - "utils/excelGenerator.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: excel-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-excel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run excel regression checks
+        run: npm run test:excel

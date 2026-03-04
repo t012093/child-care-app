@@ -17,7 +17,7 @@ export interface User {
     address?: string;
     emergencyContact?: string;
   };
-  children?: Array<{
+  children?: {
     id: string;
     name: string;
     birthDate: string;
@@ -60,7 +60,7 @@ export interface User {
       currentTemperature?: string;
       lastCheckDate?: string;
     };
-  }>;
+  }[];
 }
 
 type RegisterInput = Partial<User> & {
@@ -210,8 +210,16 @@ function mapAuthError(message: string) {
     return 'メールアドレスまたはパスワードが正しくありません。';
   }
 
+  if (normalized.includes('invalid_credentials')) {
+    return 'メールアドレスまたはパスワードが正しくありません。';
+  }
+
   if (normalized.includes('email not confirmed')) {
     return 'メール確認が完了していません。確認メールをご確認ください。';
+  }
+
+  if (normalized.includes('email logins are disabled')) {
+    return 'メールアドレスでのログインが無効化されています。運営へお問い合わせください。';
   }
 
   if (normalized.includes('user already registered')) {
@@ -232,6 +240,13 @@ function mapAuthError(message: string) {
 
   if (normalized.includes('password should be at least')) {
     return 'パスワードは6文字以上で入力してください。';
+  }
+
+  if (
+    normalized.includes('network request failed') ||
+    normalized.includes('failed to fetch')
+  ) {
+    return '通信に失敗しました。ネットワーク接続を確認して再度お試しください。';
   }
 
   return message;

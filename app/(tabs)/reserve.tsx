@@ -6,6 +6,11 @@ import FacilityMap from '../../components/FacilityMap';
 import FacilityFilter, { FilterOptions } from '../../components/FacilityFilter';
 import { colors } from '../../constants/colors';
 import { sampleFacilities, filterFacilities } from '../../constants/facilities';
+import { useAuth } from '../../lib/AuthContext';
+import {
+  getFacilityMapViewportForAddress,
+  getFacilityMapViewportForFacilities,
+} from '../../lib/facilityMapViewport';
 import { FileSliders as Sliders, X, ArrowUpDown } from 'lucide-react-native';
 
 const ITEMS_PER_PAGE = 15;
@@ -13,6 +18,7 @@ const ITEMS_PER_PAGE = 15;
 type SortOption = 'distance' | 'rating' | 'newest';
 
 export default function ReserveScreen() {
+  const { user } = useAuth();
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -75,6 +81,18 @@ export default function ReserveScreen() {
     filters.ageRanges.length +
     (filters.hasSaturday !== null ? 1 : 0) +
     (filters.capacityRange !== null ? 1 : 0);
+
+  const userRegionViewport = useMemo(
+    () => getFacilityMapViewportForAddress(user?.parentInfo?.address, sampleFacilities),
+    [user?.parentInfo?.address]
+  );
+
+  const filteredViewport = useMemo(
+    () => getFacilityMapViewportForFacilities(filteredAndSortedFacilities, userRegionViewport),
+    [filteredAndSortedFacilities, userRegionViewport]
+  );
+
+  const mapViewport = activeFilterCount > 0 ? filteredViewport : userRegionViewport;
 
   // ページネーションハンドラー
   const handleLoadMore = () => {
@@ -164,6 +182,8 @@ export default function ReserveScreen() {
         <FacilityMap
           facilities={filteredAndSortedFacilities}
           height={isWeb ? 600 : Dimensions.get('window').width - 32}
+          center={mapViewport.center}
+          zoom={mapViewport.zoom}
         />
       </View>
 

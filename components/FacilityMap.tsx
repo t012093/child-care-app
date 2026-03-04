@@ -18,13 +18,17 @@ export default function FacilityMap({
   height = 400,
   center,
 }: FacilityMapProps) {
-  const handleOpenMaps = () => {
-    const facility = selectedFacilityId
-      ? facilities.find(f => f.id === selectedFacilityId)
-      : facilities[0];
+  const targetFacility = selectedFacilityId
+    ? facilities.find((facility) => facility.id === selectedFacilityId)
+    : null;
 
-    if (facility) {
-      const url = `https://maps.google.com/?q=${facility.lat},${facility.lng}`;
+  const target = targetFacility
+    ? { lat: targetFacility.lat, lng: targetFacility.lng }
+    : center ?? (facilities[0] ? { lat: facilities[0].lat, lng: facilities[0].lng } : null);
+
+  const handleOpenMaps = () => {
+    if (target) {
+      const url = `https://maps.google.com/?q=${target.lat},${target.lng}`;
       Linking.openURL(url);
     }
   };

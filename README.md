@@ -20,6 +20,10 @@
   - 2026-03-03 時点の画面確認結果、不具合、保存済みキャプチャを確認できます
 - [Google Maps セットアップ](./docs/GOOGLE_MAPS_SETUP.md)
   - Web と将来の iOS / Android で設定を混同しないための運用メモです
+- [MCP サーバー設計メモ](./docs/MCP_SERVER_DESIGN.md)
+  - Codex / Claude Code から使うための API / MCP の切り方と段階的な実装方針です
+- [申請書自動化 再設計案](./docs/APPLICATION_AUTOMATION_REDESIGN.md)
+  - Excel / Word / CSV を正として、提出時に PDF へ落とすための再設計方針です
 
 ### 1. 依存関係のインストール
 

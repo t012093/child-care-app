@@ -3,17 +3,6 @@ name: Excel Regression
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "assets/templates/employment_certificate.xlsx"
-      - "docs/examples/employment_fixed_input.json"
-      - "docs/examples/employment_variable_input.json"
-      - "package.json"
-      - "package-lock.json"
-      - "scripts/assert-xlsx-cells.js"
-      - "scripts/render-employment-certificate-poc.js"
-      - "scripts/test-employment-excel.js"
-      - "utils/excelFieldMappings.ts"
-      - "utils/excelGenerator.ts"
   push:
     branches: [main]
     paths:

@@ -22,6 +22,8 @@
   - Web と将来の iOS / Android で設定を混同しないための運用メモです
 - [MCP サーバー設計メモ](./docs/MCP_SERVER_DESIGN.md)
   - Codex / Claude Code から使うための API / MCP の切り方と段階的な実装方針です
+- [LLM 手動運用ガイド（APIなし）](./docs/LLM_MANUAL_OPERATION.md)
+  - Codex / Claude Code を API 組み込みなしで安全に回すための実務ルールです
 - [申請書自動化 再設計案](./docs/APPLICATION_AUTOMATION_REDESIGN.md)
   - Excel / Word / CSV を正として、提出時に PDF へ落とすための再設計方針です
 
@@ -117,6 +119,15 @@ npm run dev:tunnel
 |---------|------|
 | `npm run build:web` | Web版のプロダクションビルド作成 |
 | `npm run lint` | コードのリントチェック |
+| `npm run test:excel` | 就労証明書Excelの回帰チェック（fixed/variable） |
+
+## Excel運用ルール
+
+就労証明書の Excel テンプレート・マッピングを変更する場合は、次の運用を必須にします。
+
+1. ローカルで `npm run test:excel` を実行してからコミットする
+2. `main` へは直接 push せず、必ず PR で反映する
+3. PR の必須チェック `Excel Regression / test-excel` が通るまでマージしない
 
 ## 技術スタック
 

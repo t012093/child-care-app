@@ -21,6 +21,7 @@ import DayCalendar from '../../components/calendar/DayCalendar';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useReservations } from '../../hooks/useReservations';
+import { useAuth } from '../../lib/AuthContext';
 import { CalendarViewType, Reservation } from '../../types/reservation';
 
 type ViewTab = CalendarViewType;
@@ -28,10 +29,14 @@ type ViewTab = CalendarViewType;
 export default function ReservationsScreen() {
   const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
   const router = useRouter();
+  const { user } = useAuth();
 
   // 予約データ管理
   const {
     reservations,
+    isLoading,
+    loadError,
+    scopedFacilityIds,
     stats,
     filter,
     setFilter,
@@ -43,7 +48,11 @@ export default function ReservationsScreen() {
     bulkUpdateStatus,
     checkIn,
     checkOut,
-  } = useReservations();
+  } = useReservations({
+    scope: 'facility',
+    facilityUserId: user?.id,
+    includeDemoFallback: false,
+  });
 
   // UI状態管理
   const [selectedView, setSelectedView] = useState<ViewTab>('list');
@@ -237,7 +246,23 @@ export default function ReservationsScreen() {
         {/* ビューコンテンツ */}
         {selectedView === 'list' && (
           <View style={styles.listSection}>
-            {reservations.length > 0 ? (
+            {isLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>予約情報を読み込み中です...</Text>
+              </View>
+            ) : !user ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>施設アカウントでログインしてください</Text>
+              </View>
+            ) : loadError ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>予約取得に失敗しました: {loadError}</Text>
+              </View>
+            ) : scopedFacilityIds.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>所属施設が見つかりません。施設登録・所属設定を確認してください。</Text>
+              </View>
+            ) : reservations.length > 0 ? (
               <View style={styles.reservationList}>
                 {reservations.map((reservation) => (
                   <ReservationListItem

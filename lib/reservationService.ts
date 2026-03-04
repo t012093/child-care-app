@@ -346,6 +346,59 @@ export async function fetchAllReservations() {
     );
 }
 
+export async function fetchFacilityIdsForStaffUser(userId: string) {
+  if (!isUuid(userId)) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('facility_staff')
+    .select('facility_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(error.message || '施設所属情報の取得に失敗しました');
+  }
+
+  const facilityIds = ((data as { facility_id?: string | null }[] | null) || [])
+    .map((row) => row.facility_id)
+    .filter((value): value is string => Boolean(value) && isUuid(value));
+
+  return Array.from(new Set(facilityIds));
+}
+
+export async function fetchReservationsByFacilityIds(facilityIds: string[]) {
+  const scopedFacilityIds = Array.from(new Set(facilityIds.filter((id) => isUuid(id))));
+  if (scopedFacilityIds.length === 0) {
+    return [];
+  }
+
+  const responses = await Promise.all(
+    scopedFacilityIds.map((facilityId) =>
+      supabase
+        .from('reservations')
+        .select('*')
+        .eq('facility_id', facilityId)
+    )
+  );
+
+  const failedResponse = responses.find((response) => response.error);
+  if (failedResponse?.error) {
+    throw new Error(failedResponse.error.message || '施設予約一覧の取得に失敗しました');
+  }
+
+  const mergedRows = responses.flatMap((response) => (response.data as ReservationRow[] | null) || []);
+  const uniqueRows = Array.from(
+    new Map(mergedRows.map((row) => [row.id, row])).values()
+  );
+
+  return uniqueRows
+    .map(mapReservationRow)
+    .sort((left, right) =>
+      `${left.date} ${left.startTime}`.localeCompare(`${right.date} ${right.startTime}`)
+    );
+}
+
 export async function fetchParentReservations(userId: string) {
   if (!isUuid(userId)) {
     return [];

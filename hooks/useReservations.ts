@@ -8,6 +8,8 @@ import {
 } from '../types/reservation';
 import {
   fetchAllReservations,
+  fetchFacilityIdsForStaffUser,
+  fetchReservationsByFacilityIds,
   markReservationCheckedIn,
   markReservationCheckedOut,
   updateReservationStatusRecord,
@@ -108,33 +110,82 @@ function mergeReservations(base: Reservation[], next: Reservation[]) {
  * 予約管理のためのカスタムフック
  * 実データ取得を優先し、空の場合のみデモデータをフォールバックします。
  */
-export function useReservations() {
+export interface UseReservationsOptions {
+  scope?: 'all' | 'facility';
+  facilityUserId?: string;
+  includeDemoFallback?: boolean;
+}
+
+export function useReservations(options: UseReservationsOptions = {}) {
+  const {
+    scope = 'all',
+    facilityUserId,
+    includeDemoFallback = true,
+  } = options;
   const [filter, setFilter] = useState<ReservationFilter>({});
   const [sort, setSort] = useState<ReservationSort>({
     key: 'date',
     order: 'asc',
   });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [allReservations, setAllReservations] = useState<Reservation[]>(DEMO_RESERVATIONS);
+  const [allReservations, setAllReservations] = useState<Reservation[]>(
+    includeDemoFallback ? DEMO_RESERVATIONS : []
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [scopedFacilityIds, setScopedFacilityIds] = useState<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadReservations = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
       try {
-        const storedReservations = await fetchAllReservations();
+        let nextScopedFacilityIds: string[] = [];
+        let storedReservations: Reservation[] = [];
+
+        if (scope === 'facility') {
+          if (!facilityUserId) {
+            if (!isMounted) return;
+            setScopedFacilityIds([]);
+            setAllReservations(includeDemoFallback ? DEMO_RESERVATIONS : []);
+            setIsLoading(false);
+            return;
+          }
+
+          nextScopedFacilityIds = await fetchFacilityIdsForStaffUser(facilityUserId);
+          storedReservations = await fetchReservationsByFacilityIds(nextScopedFacilityIds);
+        } else {
+          storedReservations = await fetchAllReservations();
+        }
 
         if (!isMounted) return;
 
+        setScopedFacilityIds(nextScopedFacilityIds);
+
         if (storedReservations.length > 0) {
-          setAllReservations(mergeReservations(DEMO_RESERVATIONS, storedReservations));
+          if (scope === 'all' && includeDemoFallback) {
+            setAllReservations(mergeReservations(DEMO_RESERVATIONS, storedReservations));
+          } else {
+            setAllReservations(storedReservations);
+          }
         } else {
-          setAllReservations(DEMO_RESERVATIONS);
+          setAllReservations(includeDemoFallback ? DEMO_RESERVATIONS : []);
         }
       } catch (error) {
         console.error('Failed to load reservations:', error);
         if (isMounted) {
-          setAllReservations(DEMO_RESERVATIONS);
+          setLoadError(
+            error instanceof Error ? error.message : '予約一覧の取得に失敗しました。'
+          );
+          setScopedFacilityIds([]);
+          setAllReservations(includeDemoFallback ? DEMO_RESERVATIONS : []);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
     };
@@ -144,7 +195,7 @@ export function useReservations() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [scope, facilityUserId, includeDemoFallback]);
 
   const filteredReservations = useMemo(() => {
     let result = [...allReservations];
@@ -353,6 +404,9 @@ export function useReservations() {
   return {
     allReservations,
     reservations: sortedReservations,
+    isLoading,
+    loadError,
+    scopedFacilityIds,
     stats,
     filter,
     setFilter,

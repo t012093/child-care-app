@@ -131,7 +131,7 @@ npm run web
 
 - Google Maps API キー未設定
 - ゲストユーザー時の予約取得エラー
-- 実アカウントでの予約送信完了は未検証
+- 実アカウントでの予約送信完了は確認済み（札幌 / 富山）
 
 ## 11. 住所ベース地図中心の確認（2026-03-05）
 
@@ -154,8 +154,30 @@ npm run web
 - 本確認時の Google Maps リンク中心座標は `ll=36.696964,137.19575`（富山周辺）
 - 住所未入力時は既定の地図中心（東京）を使用します
 
-## 12. 関連ドキュメント
+## 12. 富山施設予約の実動作確認（2026-03-05）
+
+`facilities.district` 制約調整後に、富山施設で予約作成が通ることを確認しました。
+
+確認手順:
+
+1. `http://localhost:8081/facility/300`（富山市中央保育所）を開く
+2. `予約する` を押して予約作成画面へ遷移する
+3. お子様 / 日付 / 時間を入力し、`確認へ進む` -> `予約を送信` を実行する
+4. `マイページ` の予約状況に富山施設の予約が追加されることを確認する
+
+確認結果:
+
+- `POST /rest/v1/facilities` が `201`
+- `POST /rest/v1/reservations` が `201`
+- `マイページ` に `富山市中央保育所` の予約が表示される
+
+取得スクリーンショット:
+
+- 予約反映後プロフィール: `../artifacts/screenshots/reservation-toyama-success-20260305.png`
+
+## 13. 関連ドキュメント
 
 - Web 確認結果の詳細: [WEB_TEST_REPORT_20260303.md](./WEB_TEST_REPORT_20260303.md)
+- 富山予約の確認結果: [WEB_TEST_REPORT_20260305_TOYAMA_RESERVATION.md](./WEB_TEST_REPORT_20260305_TOYAMA_RESERVATION.md)
 - Google Maps 設定: [GOOGLE_MAPS_SETUP.md](./GOOGLE_MAPS_SETUP.md)
 - 実装状況: [IMPLEMENTATION_STATUS_20260303.md](./IMPLEMENTATION_STATUS_20260303.md)

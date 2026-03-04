@@ -1,5 +1,6 @@
 import { Facility, sampleFacilities } from '@/constants/facilities';
 import { User } from '@/lib/AuthContext';
+import { getPersistedFacilityDistrict } from '@/lib/facilityDistrict';
 import { supabase } from '@/lib/supabase';
 import {
   Reservation,
@@ -219,7 +220,7 @@ async function ensureFacilityRecord(facility: Facility) {
       category: facility.type,
       stock: 0,
       featured: false,
-      district: facility.district || null,
+      district: getPersistedFacilityDistrict(facility.district),
       opening_hours: facility.openingHours || null,
       capacity: facility.capacity || null,
       age_range: facility.ageRange || null,

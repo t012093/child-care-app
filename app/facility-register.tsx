@@ -18,6 +18,7 @@ import { Building2, Mail, Lock, Phone, MapPin, ArrowLeft } from 'lucide-react-na
 import { Picker } from '@react-native-picker/picker';
 import { facilityColors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
+import { getPersistedFacilityDistrict } from '@/lib/facilityDistrict';
 import { prefectures, getDistrictsByPrefecture } from '@/constants/regions';
 
 export default function FacilityRegisterScreen() {
@@ -124,7 +125,7 @@ export default function FacilityRegisterScreen() {
           name: facilityName.trim(),
           type: facilityType as any,
           prefecture: prefectureName,
-          district: district,
+          district: getPersistedFacilityDistrict(district),
           address: address.trim(),
           phone: phoneNumber.trim(),
           email: email.trim(),

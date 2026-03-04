@@ -38,3 +38,15 @@ yarn-error.*
 
 # test artifacts
 artifacts/employment_certificate_test_*.xlsx
+
+# local operation artifacts (do not commit)
+AGENTS.md
+employment-preview-download.png
+artifacts/REGISTER_FLOW_ASSETS.md
+artifacts/register-flow-web.mp4
+artifacts/console-errors-*.txt
+artifacts/network-*.txt
+artifacts/employment_variable_input.json
+artifacts/employment_certificate_cfbedit.xlsx
+artifacts/employment_certificate_poc_*.xlsx
+artifacts/screenshots/register-step*-web.png

@@ -35,3 +35,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# test artifacts
+artifacts/employment_certificate_test_*.xlsx

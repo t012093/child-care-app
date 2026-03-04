@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* eslint-env node */
+/* global __dirname */
 
 const fs = require('fs');
 const os = require('os');

@@ -37,6 +37,7 @@ export default function ChildInfoScreen() {
 
   const [childName, setChildName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [birthDateTouched, setBirthDateTouched] = useState(false);
   const [allergies, setAllergies] = useState('');
   const [medicalInfo, setMedicalInfo] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,6 +50,13 @@ export default function ChildInfoScreen() {
     if (Platform.OS !== 'web') {
       Alert.alert(title, message);
     }
+  };
+
+  const formatBirthDateInput = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}/${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
   };
 
   const validateBirthDate = (date: string) => {
@@ -65,6 +73,10 @@ export default function ChildInfoScreen() {
            inputDate.getDate() === day;
   };
 
+  const isBirthDateValid = validateBirthDate(birthDate);
+  const showBirthDateInlineError = birthDateTouched && birthDate.length > 0 && !isBirthDateValid;
+  const isCompleteDisabled = isLoading || showBirthDateInlineError;
+
   const handleComplete = async () => {
     if (isLoading) {
       return;
@@ -76,11 +88,13 @@ export default function ChildInfoScreen() {
     }
 
     if (!birthDate.trim()) {
+      setBirthDateTouched(true);
       showFormError('生年月日を入力してください。');
       return;
     }
 
     if (!validateBirthDate(birthDate)) {
+      setBirthDateTouched(true);
       showFormError('生年月日は正しい形式（例: 2020/04/15）で入力してください。');
       return;
     }
@@ -174,16 +188,22 @@ export default function ChildInfoScreen() {
                       style={styles.input}
                       value={birthDate}
                       onChangeText={(value) => {
-                        setBirthDate(value);
+                        setBirthDate(formatBirthDateInput(value));
                         if (errorMessage) {
                           setErrorMessage(null);
                         }
                       }}
+                      onBlur={() => setBirthDateTouched(true)}
                       placeholder="2020/04/15"
                       placeholderTextColor={colors.textSub}
                       keyboardType="numeric"
+                      maxLength={10}
                     />
-                    <Text style={styles.helperText}>形式: YYYY/MM/DD</Text>
+                    <Text style={[styles.helperText, showBirthDateInlineError && styles.helperErrorText]}>
+                      {showBirthDateInlineError
+                        ? 'YYYY/MM/DD 形式で入力してください（例: 2020/04/15）'
+                        : '形式: YYYY/MM/DD'}
+                    </Text>
                   </View>
 
                   <View style={styles.inputContainer}>
@@ -248,9 +268,9 @@ export default function ChildInfoScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={[styles.completeButton, isLoading && styles.disabledButton]}
+                    style={[styles.completeButton, isCompleteDisabled && styles.disabledButton]}
                     onPress={handleComplete}
-                    disabled={isLoading}
+                    disabled={isCompleteDisabled}
                     activeOpacity={0.85}
                   >
                     <Text style={styles.completeButtonText}>
@@ -379,6 +399,9 @@ const styles = StyleSheet.create({
     color: colors.textSub,
     marginTop: 4,
     marginLeft: 4,
+  },
+  helperErrorText: {
+    color: '#B91C1C',
   },
   infoBox: {
     backgroundColor: colors.accentSoft,

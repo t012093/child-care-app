@@ -1,0 +1,334 @@
+formId: employment_certificate
+formName: 就労証明書
+specVersion: draft-v1
+status: draft
+
+template:
+  primaryPath: assets/templates/employment_certificate.xlsx
+  duplicatePaths:
+    - public/assets/templates/employment_certificate.xlsx
+    - docs/syuurou/work_certificate_241129 (1).xlsx
+  format: xlsx
+  workbookFingerprint:
+    sha256: faae88cd87456d31477530ea8f9ea0cd8d4f72681046a78d956ea86eed5077f5
+  sheets:
+    - name: 標準的な様式
+      role: main_form
+      range: A1:AL1000
+      merges: 236
+      dataValidations: true
+    - name: プルダウンリスト
+      role: validation_source
+    - name: 記載要領
+      role: instructions
+
+rendering:
+  strategy:
+    - named_range
+    - cell_anchor
+    - checkbox_marker
+  notes:
+    - named range は一部の上部欄しかカバーしない
+    - 主シートは data validation を多用しているため、検証規則を壊さない保存が必要
+    - PDF 提出前提なら workbook 構造を保ったまま xlsx を保存し、その後 pdf 化する
+
+schemaFindings:
+  matches:
+    - issueDate は 証明日 欄に対応可能
+    - employerRepresentative は 代表者名 欄に対応可能
+    - employerAddress は 所在地 欄に対応可能
+    - employerPhone は 3 分割の電話番号欄に対応可能
+    - parentName は 本人氏名 欄に対応可能
+    - hireDate は 雇用(予定)期間等 の開始日欄へ対応可能
+  gaps:
+    - employerName は現在 UI にあるが named range がなく、cell anchor 対応が必要
+    - issuerName は UI 上の概念だが、実テンプレート上は 担当者名 へ寄せるか再定義が必要
+    - issuerTitle に対応する明確な欄が見当たらない
+    - workingDaysPerWeek / workingHoursPerWeek は単一セルではなく、固定就労・変則就労のどちらを使うかで分岐する
+    - jobDescription に対応する単独欄が現テンプレート上で明確ではない
+    - parentAddress はこのテンプレート上で独立欄としては見当たらない
+
+fields:
+  employerName:
+    sourceField: employerName
+    status: draft
+    confidence: high
+    target:
+      type: cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 事業所名
+      range: Z4:AK4
+      writeCell: Z4
+      inputShape: merged_text
+    notes:
+      - named range は未定義
+
+  issueDate:
+    sourceField: issueDate
+    status: draft
+    confidence: high
+    target:
+      type: composite_cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 証明日
+      candidateCells:
+        year:
+          range: AA3:AD3
+          writeCell: AA3
+        month:
+          range: AF3:AG3
+          writeCell: AF3
+        day:
+          range: AI3:AJ3
+          writeCell: AI3
+      formatter: split_date_yyyy_mm_dd
+    notes:
+      - 西暦固定の証明日欄
+      - 年月日の各セルはプルダウン付き
+
+  employerRepresentative:
+    sourceField: employerRepresentative
+    status: draft
+    confidence: high
+    target:
+      type: named_range
+      sheet: 標準的な様式
+      name: name
+      range: Z5:AK5
+      inputShape: merged_text
+    notes:
+      - ラベルは 代表者名
+
+  employerAddress:
+    sourceField: employerAddress
+    status: draft
+    confidence: high
+    target:
+      type: named_range
+      sheet: 標準的な様式
+      name: place
+      range: Z6:AK6
+      inputShape: merged_text
+
+  employerPhone:
+    sourceField: employerPhone
+    status: draft
+    confidence: medium
+    target:
+      type: composite_named_range
+      sheet: 標準的な様式
+      parts:
+        - name: phone1
+          range: Z7:AB7
+        - name: phone2
+          range: AD7:AG7
+        - name: phone3
+          range: AI7:AK7
+      formatter: split_phone_hyphen_3
+    notes:
+      - `011-123-4567` のような値を 3 分割して格納する
+
+  issuerName:
+    sourceField: issuerName
+    status: needs_review
+    confidence: low
+    target:
+      type: named_range
+      sheet: 標準的な様式
+      name: tantouname
+      range: Z8:AK8
+      inputShape: merged_text
+    notes:
+      - テンプレート上のラベルは 担当者名
+      - UI の issuerName をこの欄に寄せるか、canonical schema を再定義するか判断が必要
+
+  issuerTitle:
+    sourceField: issuerTitle
+    status: schema_gap
+    confidence: low
+    notes:
+      - 現テンプレート上で対応欄を確認できていない
+      - 無理に埋めず canonical schema 側を見直す方が安全
+
+  parentName:
+    sourceField: parentName
+    status: draft
+    confidence: medium
+    target:
+      type: cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 本人氏名
+      candidateRange: I19:Z19
+      inputShape: merged_text
+    notes:
+      - フリガナ欄は別行のため、必要なら parentKana を canonical schema に追加する
+
+  parentBirthDate:
+    sourceField: parentBirthDate
+    status: draft
+    confidence: high
+    target:
+      type: composite_cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 生年月日
+      candidateCells:
+        year:
+          range: AD19:AF19
+          writeCell: AD19
+        month:
+          range: AH19
+          writeCell: AH19
+        day:
+          range: AJ19
+          writeCell: AJ19
+      formatter: split_date_yyyy_mm_dd
+    notes:
+      - 年は結合セル、月日 は単セルプルダウン
+
+  hireDate:
+    sourceField: hireDate
+    status: draft
+    confidence: high
+    target:
+      type: composite_cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 雇用(予定)期間等
+      candidateCells:
+        year:
+          range: T20:U20
+          writeCell: T20
+        month:
+          range: W20
+          writeCell: W20
+        day:
+          range: Y20
+          writeCell: Y20
+      formatter: split_date_yyyy_mm_dd
+    notes:
+      - 無期雇用前提で開始日側のみ使用する想定
+      - 有期雇用対応は schema 拡張が必要
+
+  employmentType:
+    sourceField: employmentType
+    status: draft
+    confidence: medium
+    target:
+      type: checkbox_group
+      sheet: 標準的な様式
+      options:
+        正社員: I23
+        パート: L23
+        アルバイト: L23
+        派遣社員: Q23
+        契約社員: T23
+        会計年度任用職員: W23
+        非常勤・臨時職員: AB23
+        役員: AG23
+        自営業主: I24
+        自営業専従者: L24
+        家族従業者: Q24
+        内職: U24
+        業務委託: W24
+        その他: AA24
+      markStyle: "■"
+    notes:
+      - 現 UI の選択肢と完全一致しない
+      - `アルバイト` は `パート・アルバイト` に寄せる暫定案
+
+  workingDaysPerWeek:
+    sourceField: workingDaysPerWeek
+    status: draft
+    confidence: high
+    target:
+      type: cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 一週当たりの就労日数
+      range: AC27:AE27
+      writeCell: AC27
+    notes:
+      - 週日数は AC27:AE27 の結合セル
+      - 月間就労日数は Q27:S27 に別途存在する
+
+  workingHoursPerWeek:
+    sourceField: workingHoursPerWeek
+    status: schema_gap
+    confidence: low
+    notes:
+      - 現テンプレートは 合計時間 を 月間 / 週間 と勤務帯で分けている
+      - 単一の `workingHoursPerWeek` だけでは十分に表現できない
+
+  workStartTime:
+    sourceField: workStartTime
+    status: draft
+    confidence: high
+    target:
+      type: composite_cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 平日
+      candidateCells:
+        hour:
+          range: K28:L28
+          writeCell: K28
+        minute:
+          range: N28:O28
+          writeCell: N28
+      formatter: split_time_hh_mm
+    notes:
+      - 固定就労の平日欄を優先する暫定案
+      - 変則就労対応は別 spec が必要
+
+  workEndTime:
+    sourceField: workEndTime
+    status: draft
+    confidence: high
+    target:
+      type: composite_cell_anchor
+      sheet: 標準的な様式
+      anchorLabel: 平日
+      candidateCells:
+        hour:
+          range: T28:U28
+          writeCell: T28
+        minute:
+          range: W28:X28
+          writeCell: W28
+      formatter: split_time_hh_mm
+    notes:
+      - 固定就労の平日欄を優先する暫定案
+
+  jobDescription:
+    sourceField: jobDescription
+    status: schema_gap
+    confidence: low
+    notes:
+      - 現テンプレート上で明確な単独記入欄を確認できていない
+      - まずは canonical schema から optional 扱いにした方がよい
+
+  parentAddress:
+    sourceField: parentAddress
+    status: schema_gap
+    confidence: low
+    notes:
+      - 現テンプレート上で独立の住所欄を確認できていない
+
+validation:
+  prefillChecks:
+    - employerRepresentative is required
+    - employerAddress is required
+    - employerPhone is required
+    - parentName is required
+    - hireDate is required
+    - employmentType is required
+  rendererChecks:
+    - preserve workbook defined names
+    - preserve sheet data validations
+    - preserve merged cells
+    - keep sheet names unchanged
+  manualReviewRequired:
+    - issuerName mapping policy
+
+nextActions:
+  - decide whether issuerName maps to 担当者名
+  - decide whether issueDate should remain editable in UI or default to today
+  - split canonical employment schedule into fixed and variable schedule models
+  - test workbook save path without breaking data validation

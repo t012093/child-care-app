@@ -15,9 +15,12 @@ import { ChevronLeft } from 'lucide-react-native';
 import Footer from '../../../components/Footer';
 import { colors } from '../../../constants/colors';
 import {
+  createEmptyEmploymentCertificateData,
   EmploymentCertificateData,
+  employmentIndustryOptions,
   employmentTypes,
-  EmploymentType,
+  scheduleTypes,
+  workloadUnits,
 } from '../../../utils/excelFieldMappings';
 
 export default function NewEmploymentCertificateScreen() {
@@ -25,29 +28,9 @@ export default function NewEmploymentCertificateScreen() {
   const [currentStep, setCurrentStep] = useState(1);
 
   // フォームデータ
-  const [formData, setFormData] = useState<EmploymentCertificateData>({
-    // 雇用主情報
-    employerName: '',
-    employerAddress: '',
-    employerPhone: '',
-    employerRepresentative: '',
-    // 従業員（保護者）情報
-    parentName: '花田 さゆり',
-    parentAddress: '',
-    parentBirthDate: '',
-    hireDate: '',
-    // 勤務情報
-    employmentType: '正社員',
-    workingDaysPerWeek: '',
-    workingHoursPerWeek: '',
-    workStartTime: '',
-    workEndTime: '',
-    jobDescription: '',
-    // 証明書発行情報
-    issueDate: new Date().toISOString().split('T')[0],
-    issuerName: '',
-    issuerTitle: '',
-  });
+  const [formData, setFormData] = useState<EmploymentCertificateData>(
+    createEmptyEmploymentCertificateData()
+  );
 
   const updateFormData = (key: keyof EmploymentCertificateData, value: string) => {
     setFormData({ ...formData, [key]: value });
@@ -97,12 +80,12 @@ export default function NewEmploymentCertificateScreen() {
           </View>
           <Text style={styles.stepLabel}>
             {step === 1
-              ? '雇用主情報'
+              ? '事業所情報'
               : step === 2
-              ? '保護者情報'
+              ? '本人情報'
               : step === 3
-              ? '勤務情報'
-              : '確認'}
+              ? '就労条件'
+              : '記載者・確認'}
           </Text>
         </View>
       ))}
@@ -111,7 +94,32 @@ export default function NewEmploymentCertificateScreen() {
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>雇用主情報</Text>
+      <Text style={styles.sectionTitle}>事業所情報</Text>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>業種 *</Text>
+        <View style={styles.radioGroup}>
+          {employmentIndustryOptions.map((industry) => (
+            <TouchableOpacity
+              key={industry}
+              style={[
+                styles.radioButton,
+                formData.employerIndustry === industry && styles.radioButtonActive,
+              ]}
+              onPress={() => updateFormData('employerIndustry', industry)}
+            >
+              <Text
+                style={[
+                  styles.radioText,
+                  formData.employerIndustry === industry && styles.radioTextActive,
+                ]}
+              >
+                {industry}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>事業所名 *</Text>
@@ -158,7 +166,17 @@ export default function NewEmploymentCertificateScreen() {
 
   const renderStep2 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>保護者情報</Text>
+      <Text style={styles.sectionTitle}>本人・就労先情報</Text>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>フリガナ</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.parentKana}
+          onChangeText={(value) => updateFormData('parentKana', value)}
+          placeholder="例: ハナダ サユリ"
+        />
+      </View>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>氏名 *</Text>
@@ -171,12 +189,22 @@ export default function NewEmploymentCertificateScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>住所 *</Text>
+        <Text style={styles.label}>本人就労先事業所名</Text>
         <TextInput
           style={styles.input}
-          value={formData.parentAddress}
-          onChangeText={(value) => updateFormData('parentAddress', value)}
-          placeholder="例: 北海道札幌市..."
+          value={formData.workplaceName}
+          onChangeText={(value) => updateFormData('workplaceName', value)}
+          placeholder="例: 札幌支店"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>本人就労先住所</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.workplaceAddress}
+          onChangeText={(value) => updateFormData('workplaceAddress', value)}
+          placeholder="例: 北海道札幌市中央区..."
         />
       </View>
 
@@ -204,7 +232,7 @@ export default function NewEmploymentCertificateScreen() {
 
   const renderStep3 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>勤務情報</Text>
+      <Text style={styles.sectionTitle}>就労条件</Text>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>雇用形態 *</Text>
@@ -232,64 +260,197 @@ export default function NewEmploymentCertificateScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>週勤務日数 *</Text>
+        <Text style={styles.label}>就労パターン *</Text>
+        <View style={styles.radioGroup}>
+          {scheduleTypes.map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.radioButton,
+                formData.scheduleType === type && styles.radioButtonActive,
+              ]}
+              onPress={() => updateFormData('scheduleType', type)}
+            >
+              <Text
+                style={[
+                  styles.radioText,
+                  formData.scheduleType === type && styles.radioTextActive,
+                ]}
+              >
+                {type === 'fixed' ? '固定就労' : '変則就労'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>月間就労日数</Text>
         <TextInput
           style={styles.input}
-          value={formData.workingDaysPerWeek}
-          onChangeText={(value) => updateFormData('workingDaysPerWeek', value)}
-          placeholder="例: 5日"
+          value={formData.monthlyWorkDays}
+          onChangeText={(value) => updateFormData('monthlyWorkDays', value)}
+          placeholder="例: 20"
           keyboardType="numeric"
         />
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>週勤務時間 *</Text>
+        <Text style={styles.label}>週就労日数 *</Text>
         <TextInput
           style={styles.input}
-          value={formData.workingHoursPerWeek}
-          onChangeText={(value) => updateFormData('workingHoursPerWeek', value)}
-          placeholder="例: 40時間"
+          value={formData.weeklyWorkDays}
+          onChangeText={(value) => updateFormData('weeklyWorkDays', value)}
+          placeholder="例: 5"
           keyboardType="numeric"
         />
       </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>勤務開始時刻 *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.workStartTime}
-          onChangeText={(value) => updateFormData('workStartTime', value)}
-          placeholder="例: 09:00"
-        />
-      </View>
+      {formData.scheduleType === 'fixed' ? (
+        <>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>平日の開始時刻 *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.fixedWorkStartTime}
+              onChangeText={(value) => updateFormData('fixedWorkStartTime', value)}
+              placeholder="例: 09:00"
+            />
+          </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>勤務終了時刻 *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.workEndTime}
-          onChangeText={(value) => updateFormData('workEndTime', value)}
-          placeholder="例: 18:00"
-        />
-      </View>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>平日の終了時刻 *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.fixedWorkEndTime}
+              onChangeText={(value) => updateFormData('fixedWorkEndTime', value)}
+              placeholder="例: 18:00"
+            />
+          </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>業務内容 *</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={formData.jobDescription}
-          onChangeText={(value) => updateFormData('jobDescription', value)}
-          placeholder="例: 営業事務、データ入力など"
-          multiline
-          numberOfLines={4}
-        />
-      </View>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>休憩時間（分）</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.fixedBreakMinutes}
+              onChangeText={(value) => updateFormData('fixedBreakMinutes', value)}
+              placeholder="例: 60"
+              keyboardType="numeric"
+            />
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>変則就労日数の単位</Text>
+            <View style={styles.radioGroup}>
+              {workloadUnits.map((unit) => (
+                <TouchableOpacity
+                  key={unit}
+                  style={[
+                    styles.radioButton,
+                    formData.variableWorkDaysUnit === unit && styles.radioButtonActive,
+                  ]}
+                  onPress={() => updateFormData('variableWorkDaysUnit', unit)}
+                >
+                  <Text
+                    style={[
+                      styles.radioText,
+                      formData.variableWorkDaysUnit === unit && styles.radioTextActive,
+                    ]}
+                  >
+                    {unit === 'monthly' ? '月間' : '週間'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>変則就労日数</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variableWorkDays}
+              onChangeText={(value) => updateFormData('variableWorkDays', value)}
+              placeholder="例: 20"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>合計就労時間の単位</Text>
+            <View style={styles.radioGroup}>
+              {workloadUnits.map((unit) => (
+                <TouchableOpacity
+                  key={unit}
+                  style={[
+                    styles.radioButton,
+                    formData.variableWorkHoursUnit === unit && styles.radioButtonActive,
+                  ]}
+                  onPress={() => updateFormData('variableWorkHoursUnit', unit)}
+                >
+                  <Text
+                    style={[
+                      styles.radioText,
+                      formData.variableWorkHoursUnit === unit && styles.radioTextActive,
+                    ]}
+                  >
+                    {unit === 'monthly' ? '月間' : '週間'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>合計就労時間</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variableWorkHours}
+              onChangeText={(value) => updateFormData('variableWorkHours', value)}
+              placeholder="例: 160"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>主な開始時刻</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variableWorkStartTime}
+              onChangeText={(value) => updateFormData('variableWorkStartTime', value)}
+              placeholder="例: 09:00"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>主な終了時刻</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variableWorkEndTime}
+              onChangeText={(value) => updateFormData('variableWorkEndTime', value)}
+              placeholder="例: 18:00"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>休憩時間（分）</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variableBreakMinutes}
+              onChangeText={(value) => updateFormData('variableBreakMinutes', value)}
+              placeholder="例: 60"
+              keyboardType="numeric"
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 
   const renderStep4 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>証明書発行情報</Text>
+      <Text style={styles.sectionTitle}>記載者情報</Text>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>証明書発行日 *</Text>
@@ -302,22 +463,35 @@ export default function NewEmploymentCertificateScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>発行者氏名 *</Text>
+        <Text style={styles.label}>担当者名 *</Text>
         <TextInput
           style={styles.input}
-          value={formData.issuerName}
-          onChangeText={(value) => updateFormData('issuerName', value)}
+          value={formData.contactPersonName}
+          onChangeText={(value) => updateFormData('contactPersonName', value)}
           placeholder="例: 山田 太郎"
         />
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>発行者役職 *</Text>
+        <Text style={styles.label}>記載者連絡先</Text>
         <TextInput
           style={styles.input}
-          value={formData.issuerTitle}
-          onChangeText={(value) => updateFormData('issuerTitle', value)}
-          placeholder="例: 代表取締役"
+          value={formData.contactPhone}
+          onChangeText={(value) => updateFormData('contactPhone', value)}
+          placeholder="例: 011-987-6543"
+          keyboardType="phone-pad"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>備考欄</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.remarks}
+          onChangeText={(value) => updateFormData('remarks', value)}
+          placeholder="補足がある場合のみ入力"
+          multiline
+          numberOfLines={4}
         />
       </View>
 
@@ -338,6 +512,15 @@ export default function NewEmploymentCertificateScreen() {
       </View>
 
       <View style={styles.confirmSection}>
+        <Text style={styles.confirmLabel}>本人就労先</Text>
+        <Text style={styles.confirmValue}>
+          {formData.workplaceName || formData.workplaceAddress
+            ? `${formData.workplaceName || '名称未入力'} / ${formData.workplaceAddress || '住所未入力'}`
+            : '-'}
+        </Text>
+      </View>
+
+      <View style={styles.confirmSection}>
         <Text style={styles.confirmLabel}>雇用形態</Text>
         <Text style={styles.confirmValue}>{formData.employmentType}</Text>
       </View>
@@ -345,8 +528,12 @@ export default function NewEmploymentCertificateScreen() {
       <View style={styles.confirmSection}>
         <Text style={styles.confirmLabel}>勤務時間</Text>
         <Text style={styles.confirmValue}>
-          {formData.workStartTime && formData.workEndTime
-            ? `${formData.workStartTime} 〜 ${formData.workEndTime}`
+          {formData.scheduleType === 'fixed'
+            ? formData.fixedWorkStartTime && formData.fixedWorkEndTime
+              ? `${formData.fixedWorkStartTime} 〜 ${formData.fixedWorkEndTime}`
+              : '-'
+            : formData.variableWorkStartTime && formData.variableWorkEndTime
+            ? `${formData.variableWorkStartTime} 〜 ${formData.variableWorkEndTime}`
             : '-'}
         </Text>
       </View>
@@ -354,6 +541,11 @@ export default function NewEmploymentCertificateScreen() {
       <View style={styles.confirmSection}>
         <Text style={styles.confirmLabel}>証明書発行日</Text>
         <Text style={styles.confirmValue}>{formData.issueDate || '-'}</Text>
+      </View>
+
+      <View style={styles.confirmSection}>
+        <Text style={styles.confirmLabel}>担当者名</Text>
+        <Text style={styles.confirmValue}>{formData.contactPersonName || '-'}</Text>
       </View>
     </View>
   );

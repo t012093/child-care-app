@@ -11,20 +11,17 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChevronLeft, Download, FileText } from 'lucide-react-native';
+import { ChevronLeft, FileText } from 'lucide-react-native';
 import Footer from '../../../../components/Footer';
 import { colors } from '../../../../constants/colors';
-import { EmploymentCertificateData } from '../../../../utils/excelFieldMappings';
 import {
-  generateEmploymentCertificateExcel,
-  downloadExcel,
-  downloadTemplateExcel,
-} from '../../../../utils/excelGenerator';
+  EmploymentCertificateData,
+  normalizeEmploymentCertificateData,
+} from '../../../../utils/excelFieldMappings';
 
 export default function EmploymentCertificatePreviewScreen() {
   const router = useRouter();
   const [formData, setFormData] = useState<EmploymentCertificateData | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     // AsyncStorageからデータを読み込み
@@ -33,7 +30,7 @@ export default function EmploymentCertificatePreviewScreen() {
         const savedData = await AsyncStorage.getItem('employment_certificate_draft');
         if (savedData) {
           const parsedData = JSON.parse(savedData);
-          setFormData(parsedData);
+          setFormData(normalizeEmploymentCertificateData(parsedData));
         } else {
           Alert.alert('エラー', 'データが見つかりません');
           router.back();
@@ -47,37 +44,6 @@ export default function EmploymentCertificatePreviewScreen() {
 
     loadData();
   }, []);
-
-  const handleDownload = async () => {
-    if (!formData) {
-      Alert.alert('エラー', 'データが見つかりません');
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      const filename = `就労証明書_テンプレート.xlsx`;
-      await downloadTemplateExcel(filename);
-
-      Alert.alert(
-        'ダウンロード完了',
-        'テンプレートをダウンロードしました。\n\n' +
-        '下記の入力内容を参考に、Excelファイルに手動で入力してください。',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      console.error('Template download error:', error);
-      Alert.alert(
-        'エラー',
-        'テンプレートのダウンロードに失敗しました。\n' +
-          (error instanceof Error ? error.message : '不明なエラー')
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
 
   if (!formData) {
     return (
@@ -115,87 +81,151 @@ export default function EmploymentCertificatePreviewScreen() {
 
           {/* 雇用主情報 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>雇用主情報</Text>
+            <Text style={styles.sectionTitle}>事業所情報</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>業種</Text>
+              <Text style={styles.infoValue}>{formData.employerIndustry || '-'}</Text>
+            </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>事業所名</Text>
-              <Text style={styles.infoValue}>{formData.employerName}</Text>
+              <Text style={styles.infoValue}>{formData.employerName || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>事業所所在地</Text>
-              <Text style={styles.infoValue}>{formData.employerAddress}</Text>
+              <Text style={styles.infoValue}>{formData.employerAddress || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>電話番号</Text>
-              <Text style={styles.infoValue}>{formData.employerPhone}</Text>
+              <Text style={styles.infoValue}>{formData.employerPhone || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>事業主氏名</Text>
-              <Text style={styles.infoValue}>{formData.employerRepresentative}</Text>
+              <Text style={styles.infoValue}>{formData.employerRepresentative || '-'}</Text>
             </View>
           </View>
 
-          {/* 保護者情報 */}
+          {/* 本人・就労先情報 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>保護者情報</Text>
+            <Text style={styles.sectionTitle}>本人・就労先情報</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>氏名</Text>
-              <Text style={styles.infoValue}>{formData.parentName}</Text>
+              <Text style={styles.infoLabel}>フリガナ</Text>
+              <Text style={styles.infoValue}>{formData.parentKana || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>住所</Text>
-              <Text style={styles.infoValue}>{formData.parentAddress}</Text>
+              <Text style={styles.infoLabel}>氏名</Text>
+              <Text style={styles.infoValue}>{formData.parentName || '-'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>本人就労先事業所名</Text>
+              <Text style={styles.infoValue}>{formData.workplaceName || '-'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>本人就労先住所</Text>
+              <Text style={styles.infoValue}>{formData.workplaceAddress || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>生年月日</Text>
-              <Text style={styles.infoValue}>{formData.parentBirthDate}</Text>
+              <Text style={styles.infoValue}>{formData.parentBirthDate || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>雇用開始日</Text>
-              <Text style={styles.infoValue}>{formData.hireDate}</Text>
+              <Text style={styles.infoValue}>{formData.hireDate || '-'}</Text>
             </View>
           </View>
 
-          {/* 勤務情報 */}
+          {/* 就労条件 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>勤務情報</Text>
+            <Text style={styles.sectionTitle}>就労条件</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>雇用形態</Text>
-              <Text style={styles.infoValue}>{formData.employmentType}</Text>
+              <Text style={styles.infoValue}>{formData.employmentType || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>週勤務日数</Text>
-              <Text style={styles.infoValue}>{formData.workingDaysPerWeek}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>週勤務時間</Text>
-              <Text style={styles.infoValue}>{formData.workingHoursPerWeek}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>勤務時間</Text>
+              <Text style={styles.infoLabel}>就労パターン</Text>
               <Text style={styles.infoValue}>
-                {formData.workStartTime} 〜 {formData.workEndTime}
+                {formData.scheduleType === 'fixed' ? '固定就労' : '変則就労'}
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>業務内容</Text>
-              <Text style={styles.infoValue}>{formData.jobDescription}</Text>
+              <Text style={styles.infoLabel}>月間就労日数</Text>
+              <Text style={styles.infoValue}>{formData.monthlyWorkDays || '-'}</Text>
             </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>週勤務日数</Text>
+              <Text style={styles.infoValue}>{formData.weeklyWorkDays || '-'}</Text>
+            </View>
+
+            {formData.scheduleType === 'fixed' ? (
+              <>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>平日の勤務時間</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.fixedWorkStartTime && formData.fixedWorkEndTime
+                      ? `${formData.fixedWorkStartTime} 〜 ${formData.fixedWorkEndTime}`
+                      : '-'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>休憩時間</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.fixedBreakMinutes ? `${formData.fixedBreakMinutes}分` : '-'}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>変則就労日数</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.variableWorkDays
+                      ? `${formData.variableWorkDays}${formData.variableWorkDaysUnit === 'monthly' ? '日/月間' : '日/週間'}`
+                      : '-'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>合計就労時間</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.variableWorkHours
+                      ? `${formData.variableWorkHours}時間/${formData.variableWorkHoursUnit === 'monthly' ? '月間' : '週間'}`
+                      : '-'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>主な就労時間帯</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.variableWorkStartTime && formData.variableWorkEndTime
+                      ? `${formData.variableWorkStartTime} 〜 ${formData.variableWorkEndTime}`
+                      : '-'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>休憩時間</Text>
+                  <Text style={styles.infoValue}>
+                    {formData.variableBreakMinutes ? `${formData.variableBreakMinutes}分` : '-'}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
-          {/* 証明書発行情報 */}
+          {/* 記載者情報 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>証明書発行情報</Text>
+            <Text style={styles.sectionTitle}>記載者情報</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>発行日</Text>
-              <Text style={styles.infoValue}>{formData.issueDate}</Text>
+              <Text style={styles.infoValue}>{formData.issueDate || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>発行者氏名</Text>
-              <Text style={styles.infoValue}>{formData.issuerName}</Text>
+              <Text style={styles.infoLabel}>担当者名</Text>
+              <Text style={styles.infoValue}>{formData.contactPersonName || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>発行者役職</Text>
-              <Text style={styles.infoValue}>{formData.issuerTitle}</Text>
+              <Text style={styles.infoLabel}>記載者連絡先</Text>
+              <Text style={styles.infoValue}>{formData.contactPhone || '-'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>備考欄</Text>
+              <Text style={styles.infoValue}>{formData.remarks || '-'}</Text>
             </View>
           </View>
         </View>

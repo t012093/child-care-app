@@ -260,14 +260,16 @@
 
 ### 1. 富山系施設での予約作成
 
-- `constants/facilities.ts` の富山系サンプルデータが持つ `district` 値と、remote DB 側 `facilities.district` 制約が一致していない
-- そのため `ensureFacilityRecord()` 実行時に insert が失敗し、富山系施設では予約作成に失敗するケースがある
-- 札幌系施設では実予約作成を確認済み
+- 2026-03-05 対応済み
+- `lib/facilityDistrict.ts` を更新し、永続化対象の `district` は `constants/regions.ts` 由来で統一
+- `supabase/migrations/20260305090000_align_facility_district_check_with_regions.sql` で `facilities.district` CHECK 制約を拡張し、富山系IDを許可
+- 注意: 実DBへの反映にはこの新規 migration の適用が必要
 
 対象:
 - `constants/facilities.ts`
 - `lib/reservationService.ts`
-- `supabase/migrations/20251025000000_facility_features.sql`
+- `lib/facilityDistrict.ts`
+- `supabase/migrations/20260305090000_align_facility_district_check_with_regions.sql`
 
 ### 2. 施設一覧のデータソース
 
@@ -352,10 +354,9 @@
 
 ### 優先度: 高
 
-1. 富山系施設でも予約できるように `facilities.district` とサンプル施設データを整合させる
-2. 施設側予約管理を完全に実データ化し、ダッシュボード統計も Supabase 接続へ寄せる
-3. 申請書データを固定値ではなく保存データで表示する
-4. 施設ログインと施設情報編集を本接続にする
+1. 施設側予約管理を完全に実データ化し、ダッシュボード統計も Supabase 接続へ寄せる
+2. 申請書データを固定値ではなく保存データで表示する
+3. 施設ログインと施設情報編集を本接続にする
 
 ### 優先度: 中
 

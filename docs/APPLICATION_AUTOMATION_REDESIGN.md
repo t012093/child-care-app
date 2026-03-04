@@ -4,15 +4,20 @@
 
 このアプリの申請書自動化は、`PDF に直接書き込む設計` から、`Excel / Word / CSV を正として扱い、提出時に PDF 化する設計` に寄せた方がよい。
 
+ここでいう `Word` は、基本的に `DOCX` を正規形式とする。古い `DOC` は直接処理せず、最初に `DOCX` へ正規化してから扱う。
+
 特に日本の申請書では、以下が多い。
 
 - 元帳票が `XLSX`
+- 元帳票が `DOC`
 - 元帳票が `DOCX`
 - 補助表や明細が `CSV`
 - 自治体や勤務先が Excel / Word 記入を前提にしている
 - 提出時だけ PDF 化、または印刷提出
 
 この前提では、`canonical JSON -> XLSX / DOCX / CSV renderer -> PDF export -> PDF verifier` の 4 段構成が一番安定する。
+
+`DOC` はこの流れの前段で `DOC -> DOCX` に正規化する。
 
 ## 現状の問題
 
@@ -29,7 +34,7 @@
 - `utils/excelFieldMappings.ts`
   - 名前付きセルマッピングはあるが、自動入力は未実装
 
-この構成には `DOCX` の自動入力レイヤも存在しない。
+この構成には `DOCX` の自動入力レイヤも存在しない。`DOC` を安全に処理する正規化レイヤも存在しない。
 
 この構成の弱点:
 
@@ -95,6 +100,7 @@ type ApplicationDraft = {
 - `inputFormat`
   - `pdf`
   - `xlsx`
+  - `doc`
   - `docx`
   - `csv`
   - `xlsx_to_pdf`
@@ -149,6 +155,9 @@ LLM には最終配置を任せない。
   - named range 優先
   - 次に `sheet + cell`
   - さらに必要なら `header anchor + offset`
+- `DOC normalizer`
+  - `.doc` を `.docx` へ変換
+  - 変換失敗時は自動入力対象外としてレビューへ回す
 - `DOCX renderer`
   - content control 優先
   - 次に placeholder token
@@ -183,6 +192,7 @@ LLM は有効だが、使う場所を限定する。
 
 - 新しい帳票の項目名ゆれ吸収
 - Excel / Word / CSV の項目名や列名と canonical field の対応候補生成
+- `DOC` を `DOCX` に変換した後の placeholder 候補抽出
 - OCR 結果の正規化
 - 欠損値や矛盾の説明
 - spec の初期ドラフト作成
@@ -203,6 +213,7 @@ UI Form
   -> form spec resolver
   -> renderer
      -> xlsx renderer
+     -> doc normalizer
      -> docx renderer
      -> csv renderer
      -> pdf renderer
@@ -229,6 +240,7 @@ lib/application/
       toyama_2026_01.yaml
   renderers/
     xlsxRenderer.ts
+    docNormalizer.ts
     docxRenderer.ts
     csvRenderer.ts
     pdfRenderer.ts
@@ -269,6 +281,7 @@ lib/application/
 
 やること:
 
+- `DOC` が来たら最初に `DOCX` へ正規化する
 - `DOCX renderer` を追加する
 - content controls または placeholder token を spec で定義する
 - 繰り返し行や差し込み段落を deterministic に展開する
@@ -303,7 +316,7 @@ lib/application/
 
 を spec で管理する。
 
-### Phase 4: PDF テンプレート系を縮小整理する
+### Phase 5: PDF テンプレート系を縮小整理する
 
 残すもの:
 
@@ -332,7 +345,7 @@ lib/application/
   - テンプレートダウンロードのみ
   - `XLSX renderer` に置き換える
 - Word テンプレート向けの新規 generator
-  - `DOCX renderer` として追加する
+  - `DOC normalizer` と `DOCX renderer` として追加する
 - `constants/pdfFields.ts`
   - PDF 専用定義から `form spec` に寄せる
 - `utils/pdfAutoFill.ts`
@@ -350,7 +363,7 @@ lib/application/
   - formVersion
   - status
 - `application_outputs`
-  - outputType: `xlsx` `csv` `pdf`
+  - outputType: `xlsx` `docx` `csv` `pdf`
   - storagePath
   - generatedAt
   - verificationStatus
@@ -400,6 +413,7 @@ lib/application/
 - PDF 変換はクライアントだけで完結しにくい
 - Excel テンプレートの品質に依存する
 - Word テンプレートの placeholder 設計にも依存する
+- `DOC` は変換時に崩れることがある
 - named range がない帳票は cell anchor 設計が必要
 - content control がない Word は token 設計が必要
 - 生成物と元データの両方を管理する設計が必要
@@ -408,7 +422,7 @@ lib/application/
 
 1. `就労証明書` を対象に、`canonical JSON` と `form spec` を作る
 2. `XLSX renderer` を実装して、named range ベースで自動入力を成立させる
-3. `DOCX` 帳票を 1 種選び、`DOCX renderer` と `PDF` 変換 PoC を作る
+3. `DOC` または `DOCX` 帳票を 1 種選び、`DOC -> DOCX` 正規化を含む `DOCX renderer` と `PDF` 変換 PoC を作る
 
 ## 判断
 
@@ -421,3 +435,5 @@ lib/application/
 `Excel / Word / CSV を正として管理し、提出時に PDF へ変換する設計`
 
 へ切り替えるのがよい。
+
+ただし `Word` は実装上 `DOCX` を基準とし、`DOC` は互換入力として前段で正規化する。

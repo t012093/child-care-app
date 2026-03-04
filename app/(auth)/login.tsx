@@ -21,21 +21,32 @@ import { Baby, Mail, Lock, UserPlus } from 'lucide-react-native';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
+  const showLoginError = (message: string, title = 'ログインエラー') => {
+    setErrorMessage(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('入力エラー', 'メールアドレスとパスワードを入力してください。');
+      showLoginError('メールアドレスとパスワードを入力してください。', '入力エラー');
       return;
     }
 
+    setErrorMessage(null);
     setIsLoading(true);
     try {
       await login(email.trim(), password);
       // ログイン成功時はAuthContextが自動的にナビゲーションを処理
     } catch (error) {
-      Alert.alert('ログインエラー', error instanceof Error ? error.message : 'ログインに失敗しました。');
+      const message = error instanceof Error ? error.message : 'ログインに失敗しました。';
+      showLoginError(message);
+      console.error('Login failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -50,13 +61,14 @@ export default function LoginScreen() {
   };
 
   const handleGuestLogin = async () => {
+    setErrorMessage(null);
     setIsLoading(true);
     try {
       // デモユーザーとしてログイン
       await login('demo@example.com', 'demo123');
       // ログイン成功時はAuthContextが自動的にナビゲーションを処理
-    } catch (error) {
-      Alert.alert('エラー', 'ゲストログインに失敗しました。');
+    } catch {
+      showLoginError('ゲストログインに失敗しました。', 'エラー');
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +119,12 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.input}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(value) => {
+                      setEmail(value);
+                      if (errorMessage) {
+                        setErrorMessage(null);
+                      }
+                    }}
                     placeholder="example@email.com"
                     placeholderTextColor={colors.textSub}
                     keyboardType="email-address"
@@ -124,13 +141,24 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.input}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      if (errorMessage) {
+                        setErrorMessage(null);
+                      }
+                    }}
                     placeholder="パスワードを入力"
                     placeholderTextColor={colors.textSub}
                     secureTextEntry
                   />
                 </View>
               </View>
+
+              {errorMessage && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              )}
 
               <TouchableOpacity 
                 style={styles.forgotPasswordButton}
@@ -279,6 +307,21 @@ const styles = StyleSheet.create({
   forgotPasswordButton: {
     alignSelf: 'flex-end',
     marginBottom: 24,
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
+    fontWeight: '500',
   },
   forgotPasswordText: {
     fontSize: 14,

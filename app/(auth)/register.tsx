@@ -22,7 +22,8 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -30,6 +31,13 @@ export default function RegisterScreen() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const requiresEmailVerification = SUPABASE_CONFIGURED;
+
+  const showFormError = (message: string, title = '入力エラー') => {
+    setErrorMessage(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +52,9 @@ export default function RegisterScreen() {
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
     if (isCodeSent || isEmailVerified || verificationCode) {
       resetVerificationState();
     }
@@ -51,25 +62,28 @@ export default function RegisterScreen() {
 
   const handleSendCode = async () => {
     if (!email.trim()) {
-      Alert.alert('入力エラー', 'メールアドレスを入力してください。');
+      showFormError('メールアドレスを入力してください。');
       return;
     }
 
     if (!validateEmail(email.trim())) {
-      Alert.alert('入力エラー', '正しいメールアドレスを入力してください。');
+      showFormError('正しいメールアドレスを入力してください。');
       return;
     }
 
+    setErrorMessage(null);
     setIsSendingCode(true);
     try {
       await sendVerificationCode(email.trim());
       setIsCodeSent(true);
       setIsEmailVerified(false);
-      Alert.alert('認証コードを送信しました', 'メールに届いた6桁の認証コードを入力してください。');
+      if (Platform.OS !== 'web') {
+        Alert.alert('認証コードを送信しました', 'メールに届いた6桁の認証コードを入力してください。');
+      }
     } catch (error) {
-      Alert.alert(
-        '送信エラー',
-        error instanceof Error ? error.message : '認証コードの送信に失敗しました。'
+      showFormError(
+        error instanceof Error ? error.message : '認証コードの送信に失敗しました。',
+        '送信エラー'
       );
     } finally {
       setIsSendingCode(false);
@@ -78,24 +92,27 @@ export default function RegisterScreen() {
 
   const handleVerifyCode = async () => {
     if (!email.trim() || !validateEmail(email.trim())) {
-      Alert.alert('入力エラー', '先に正しいメールアドレスを入力してください。');
+      showFormError('先に正しいメールアドレスを入力してください。');
       return;
     }
 
     if (!verificationCode.trim()) {
-      Alert.alert('入力エラー', '認証コードを入力してください。');
+      showFormError('認証コードを入力してください。');
       return;
     }
 
+    setErrorMessage(null);
     setIsVerifyingCode(true);
     try {
       await verifyVerificationCode(email.trim(), verificationCode.trim());
       setIsEmailVerified(true);
-      Alert.alert('認証完了', 'メールアドレスの確認が完了しました。');
+      if (Platform.OS !== 'web') {
+        Alert.alert('認証完了', 'メールアドレスの確認が完了しました。');
+      }
     } catch (error) {
-      Alert.alert(
-        '認証エラー',
-        error instanceof Error ? error.message : '認証コードの確認に失敗しました。'
+      showFormError(
+        error instanceof Error ? error.message : '認証コードの確認に失敗しました。',
+        '認証エラー'
       );
     } finally {
       setIsVerifyingCode(false);
@@ -104,35 +121,36 @@ export default function RegisterScreen() {
 
   const handleNext = async () => {
     if (!email.trim()) {
-      Alert.alert('入力エラー', 'メールアドレスを入力してください。');
+      showFormError('メールアドレスを入力してください。');
       return;
     }
 
     if (!validateEmail(email.trim())) {
-      Alert.alert('入力エラー', '正しいメールアドレスを入力してください。');
+      showFormError('正しいメールアドレスを入力してください。');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('入力エラー', 'パスワードを入力してください。');
+      showFormError('パスワードを入力してください。');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('入力エラー', 'パスワードは6文字以上で入力してください。');
+      showFormError('パスワードは6文字以上で入力してください。');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('入力エラー', 'パスワードが一致しません。');
+      showFormError('パスワードが一致しません。');
       return;
     }
 
     if (requiresEmailVerification && !isEmailVerified) {
-      Alert.alert('入力エラー', '先にメール認証を完了してください。');
+      showFormError('先にメール認証を完了してください。');
       return;
     }
 
+    setErrorMessage(null);
     // 次の画面に遷移（保護者情報入力）
     router.push({
       pathname: '/(auth)/parent-info',
@@ -218,7 +236,12 @@ export default function RegisterScreen() {
                         <TextInput
                           style={styles.input}
                           value={verificationCode}
-                          onChangeText={setVerificationCode}
+                          onChangeText={(value) => {
+                            setVerificationCode(value);
+                            if (errorMessage) {
+                              setErrorMessage(null);
+                            }
+                          }}
                           placeholder="メールに届いた6桁コード"
                           placeholderTextColor={colors.textSub}
                           keyboardType="number-pad"
@@ -252,7 +275,12 @@ export default function RegisterScreen() {
                     <TextInput
                       style={styles.input}
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={(value) => {
+                        setPassword(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="6文字以上で入力"
                       placeholderTextColor={colors.textSub}
                       secureTextEntry
@@ -264,12 +292,23 @@ export default function RegisterScreen() {
                     <TextInput
                       style={styles.input}
                       value={confirmPassword}
-                      onChangeText={setConfirmPassword}
+                      onChangeText={(value) => {
+                        setConfirmPassword(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="パスワードを再入力"
                       placeholderTextColor={colors.textSub}
                       secureTextEntry
                     />
                   </View>
+
+                  {errorMessage && (
+                    <View style={styles.errorBox}>
+                      <Text style={styles.errorText}>{errorMessage}</Text>
+                    </View>
+                  )}
 
                   <View style={styles.infoBox}>
                     <Text style={styles.infoText}>
@@ -427,6 +466,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
+    fontWeight: '500',
   },
   infoText: {
     fontSize: 14,

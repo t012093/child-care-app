@@ -25,7 +25,6 @@ export default function ChildInfoScreen() {
     parentName, 
     phoneNumber, 
     address, 
-    emergencyContact, 
     emergencyPhone 
   } = params as {
     email: string;
@@ -33,17 +32,32 @@ export default function ChildInfoScreen() {
     parentName: string;
     phoneNumber: string;
     address: string;
-    emergencyContact: string;
     emergencyPhone: string;
   };
 
   const [childName, setChildName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [birthDateTouched, setBirthDateTouched] = useState(false);
   const [allergies, setAllergies] = useState('');
   const [medicalInfo, setMedicalInfo] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { register } = useAuth();
+
+  const showFormError = (message: string, title = '入力エラー') => {
+    setErrorMessage(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
+
+  const formatBirthDateInput = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}/${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
+  };
 
   const validateBirthDate = (date: string) => {
     const regex = /^\d{4}\/\d{2}\/\d{2}$/;
@@ -59,22 +73,33 @@ export default function ChildInfoScreen() {
            inputDate.getDate() === day;
   };
 
+  const isBirthDateValid = validateBirthDate(birthDate);
+  const showBirthDateInlineError = birthDateTouched && birthDate.length > 0 && !isBirthDateValid;
+  const isCompleteDisabled = isLoading || showBirthDateInlineError;
+
   const handleComplete = async () => {
+    if (isLoading) {
+      return;
+    }
+
     if (!childName.trim()) {
-      Alert.alert('入力エラー', 'お子様のお名前を入力してください。');
+      showFormError('お子様のお名前を入力してください。');
       return;
     }
 
     if (!birthDate.trim()) {
-      Alert.alert('入力エラー', '生年月日を入力してください。');
+      setBirthDateTouched(true);
+      showFormError('生年月日を入力してください。');
       return;
     }
 
     if (!validateBirthDate(birthDate)) {
-      Alert.alert('入力エラー', '生年月日は正しい形式（例: 2020/04/15）で入力してください。');
+      setBirthDateTouched(true);
+      showFormError('生年月日は正しい形式（例: 2020/04/15）で入力してください。');
       return;
     }
 
+    setErrorMessage(null);
     setIsLoading(true);
     try {
       // ユーザーデータを作成して登録
@@ -99,7 +124,9 @@ export default function ChildInfoScreen() {
       await register(userData);
       router.replace('/(tabs)/profile');
     } catch (error) {
-      Alert.alert('登録エラー', error instanceof Error ? error.message : '登録に失敗しました。');
+      const message = error instanceof Error ? error.message : '登録に失敗しました。';
+      showFormError(message, '登録エラー');
+      console.error('Register failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +171,12 @@ export default function ChildInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={childName}
-                      onChangeText={setChildName}
+                      onChangeText={(value) => {
+                        setChildName(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="山田 次郎"
                       placeholderTextColor={colors.textSub}
                     />
@@ -155,12 +187,23 @@ export default function ChildInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={birthDate}
-                      onChangeText={setBirthDate}
+                      onChangeText={(value) => {
+                        setBirthDate(formatBirthDateInput(value));
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
+                      onBlur={() => setBirthDateTouched(true)}
                       placeholder="2020/04/15"
                       placeholderTextColor={colors.textSub}
                       keyboardType="numeric"
+                      maxLength={10}
                     />
-                    <Text style={styles.helperText}>形式: YYYY/MM/DD</Text>
+                    <Text style={[styles.helperText, showBirthDateInlineError && styles.helperErrorText]}>
+                      {showBirthDateInlineError
+                        ? 'YYYY/MM/DD 形式で入力してください（例: 2020/04/15）'
+                        : '形式: YYYY/MM/DD'}
+                    </Text>
                   </View>
 
                   <View style={styles.inputContainer}>
@@ -168,7 +211,12 @@ export default function ChildInfoScreen() {
                     <TextInput
                       style={[styles.input, styles.multilineInput]}
                       value={allergies}
-                      onChangeText={setAllergies}
+                      onChangeText={(value) => {
+                        setAllergies(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="例: 卵、牛乳、小麦（複数の場合は「、」で区切ってください）"
                       placeholderTextColor={colors.textSub}
                       multiline
@@ -182,7 +230,12 @@ export default function ChildInfoScreen() {
                     <TextInput
                       style={[styles.input, styles.multilineInput]}
                       value={medicalInfo}
-                      onChangeText={setMedicalInfo}
+                      onChangeText={(value) => {
+                        setMedicalInfo(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="例: ○○クリニック（Dr.△△）、持病、服用中の薬など"
                       placeholderTextColor={colors.textSub}
                       multiline
@@ -197,6 +250,12 @@ export default function ChildInfoScreen() {
                       施設利用時の安全確保と緊急時対応のためにのみ使用されます。
                     </Text>
                   </View>
+
+                  {errorMessage && (
+                    <View style={styles.errorBox}>
+                      <Text style={styles.errorText}>{errorMessage}</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.buttonContainer}>
@@ -209,9 +268,9 @@ export default function ChildInfoScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={[styles.completeButton, isLoading && styles.disabledButton]}
+                    style={[styles.completeButton, isCompleteDisabled && styles.disabledButton]}
                     onPress={handleComplete}
-                    disabled={isLoading}
+                    disabled={isCompleteDisabled}
                     activeOpacity={0.85}
                   >
                     <Text style={styles.completeButtonText}>
@@ -341,6 +400,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
+  helperErrorText: {
+    color: '#B91C1C',
+  },
   infoBox: {
     backgroundColor: colors.accentSoft,
     borderRadius: 12,
@@ -353,6 +415,21 @@ const styles = StyleSheet.create({
     color: colors.textMain,
     lineHeight: 20,
     textAlign: 'center',
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
+    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',

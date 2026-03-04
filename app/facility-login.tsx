@@ -16,25 +16,85 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Building2, Mail, Lock, ArrowLeft } from 'lucide-react-native';
 import { facilityColors } from '@/constants/colors';
+import { useAuth } from '@/lib/AuthContext';
+import { fetchFacilityIdsForStaffUser } from '@/lib/reservationService';
+import { supabase } from '@/lib/supabase';
 
 export default function FacilityLoginScreen() {
+  const { login, logout } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetSending, setIsResetSending] = useState(false);
+
+  const showFacilityLoginError = (message: string, title = 'ログインエラー') => {
+    setErrorMessage(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
+
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
+  };
+
+  const mapResetPasswordError = (message: string) => {
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes('too many requests')) {
+      return '送信回数の上限に達しました。少し時間をおいて再度お試しください。';
+    }
+
+    if (normalized.includes('rate limit')) {
+      return '送信回数の上限に達しました。少し時間をおいて再度お試しください。';
+    }
+
+    return message;
+  };
+
+  const ensureFacilityAccess = async () => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      throw new Error('ログイン情報の確認に失敗しました。もう一度お試しください。');
+    }
+
+    const scopedFacilityIds = await fetchFacilityIdsForStaffUser(user.id);
+    if (scopedFacilityIds.length === 0) {
+      throw new Error(
+        'このアカウントは施設管理者として未登録です。施設登録または所属設定を確認してください。'
+      );
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('入力エラー', 'メールアドレスとパスワードを入力してください。');
+      showFacilityLoginError('メールアドレスとパスワードを入力してください。', '入力エラー');
       return;
     }
 
+    setErrorMessage(null);
     setIsLoading(true);
+    let signedIn = false;
     try {
-      // TODO: 実際のAPI呼び出し
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      router.push('/(facility-tabs)/dashboard' as any);
+      await login(email.trim(), password);
+      signedIn = true;
+      await ensureFacilityAccess();
+      router.replace('/(facility-tabs)/dashboard' as any);
     } catch (error) {
-      Alert.alert('ログインエラー', 'メールアドレスまたはパスワードが正しくありません。');
+      if (signedIn) {
+        await logout();
+      }
+      const message = error instanceof Error
+        ? error.message
+        : 'メールアドレスまたはパスワードが正しくありません。';
+      showFacilityLoginError(message);
+      console.error('Facility login failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +102,41 @@ export default function FacilityLoginScreen() {
 
   const handleRegister = () => {
     router.push('/facility-register' as any);
+  };
+
+  const sendResetEmail = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert('入力エラー', 'パスワード再設定用のメールアドレスを入力してください。');
+      return;
+    }
+
+    if (!validateEmail(trimmedEmail)) {
+      Alert.alert('入力エラー', '正しいメールアドレス形式で入力してください。');
+      return;
+    }
+
+    setIsResetSending(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail);
+      if (error) {
+        throw new Error(mapResetPasswordError(error.message || 'メール送信に失敗しました。'));
+      }
+
+      Alert.alert(
+        '送信完了',
+        'パスワードリセット用のリンクを送信しました。メールをご確認ください。'
+      );
+    } catch (error) {
+      Alert.alert(
+        '送信エラー',
+        error instanceof Error
+          ? mapResetPasswordError(error.message)
+          : 'メールの送信に失敗しました。'
+      );
+    } finally {
+      setIsResetSending(false);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -53,8 +148,8 @@ export default function FacilityLoginScreen() {
         {
           text: '送信',
           onPress: () => {
-            Alert.alert('送信完了', '登録されたメールアドレスにパスワードリセット用のリンクを送信しました。');
-          }
+            void sendResetEmail();
+          },
         },
       ]
     );
@@ -64,17 +159,11 @@ export default function FacilityLoginScreen() {
     router.back();
   };
 
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    try {
-      // ゲストログインのシミュレーション
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/(facility-tabs)/dashboard' as any);
-    } catch (error) {
-      Alert.alert('ログインエラー', 'ゲストログインに失敗しました。');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGuestLogin = () => {
+    Alert.alert(
+      'ゲストログイン停止中',
+      '権限制御のため、施設画面のゲストログインは現在停止しています。'
+    );
   };
 
   return (
@@ -127,7 +216,12 @@ export default function FacilityLoginScreen() {
                   <TextInput
                     style={styles.input}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(value) => {
+                      setEmail(value);
+                      if (errorMessage) {
+                        setErrorMessage(null);
+                      }
+                    }}
                     placeholder="facility@example.com"
                     placeholderTextColor={facilityColors.textSub}
                     keyboardType="email-address"
@@ -144,7 +238,12 @@ export default function FacilityLoginScreen() {
                   <TextInput
                     style={styles.input}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      if (errorMessage) {
+                        setErrorMessage(null);
+                      }
+                    }}
                     placeholder="パスワードを入力"
                     placeholderTextColor={facilityColors.textSub}
                     secureTextEntry
@@ -152,11 +251,25 @@ export default function FacilityLoginScreen() {
                 </View>
               </View>
 
+              {errorMessage && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              )}
+
               <TouchableOpacity
                 style={styles.forgotPasswordButton}
                 onPress={handleForgotPassword}
+                disabled={isLoading || isResetSending}
               >
-                <Text style={styles.forgotPasswordText}>パスワードを忘れた方</Text>
+                <Text
+                  style={[
+                    styles.forgotPasswordText,
+                    (isLoading || isResetSending) && styles.disabledForgotPasswordText,
+                  ]}
+                >
+                  {isResetSending ? '送信中...' : 'パスワードを忘れた方'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -312,10 +425,28 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginBottom: 24,
   },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
   forgotPasswordText: {
     fontSize: 14,
     color: facilityColors.primary,
     fontWeight: '600',
+  },
+  disabledForgotPasswordText: {
+    opacity: 0.6,
   },
   loginButton: {
     backgroundColor: facilityColors.primary,

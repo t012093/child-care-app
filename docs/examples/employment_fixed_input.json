@@ -1,5 +1,5 @@
 {
-  "scheduleType": "fixed",
+  "scheduleType":  "fixed",
   "monthlyWorkDays": "21",
   "weeklyWorkDays": "5",
   "fixedWorkStartTime": "08:15",

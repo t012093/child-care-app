@@ -19,21 +19,14 @@ import { colors } from '@/constants/colors';
 
 export default function ChildInfoScreen() {
   const params = useLocalSearchParams();
-  const { 
-    email, 
-    password, 
-    parentName, 
-    phoneNumber, 
-    address, 
-    emergencyPhone 
-  } = params as {
-    email: string;
-    password: string;
-    parentName: string;
-    phoneNumber: string;
-    address: string;
-    emergencyPhone: string;
-  };
+  const normalizeParam = (value: string | string[] | undefined) =>
+    Array.isArray(value) ? value[0] ?? '' : value ?? '';
+  const email = normalizeParam(params.email as string | string[] | undefined);
+  const password = normalizeParam(params.password as string | string[] | undefined);
+  const parentName = normalizeParam(params.parentName as string | string[] | undefined);
+  const phoneNumber = normalizeParam(params.phoneNumber as string | string[] | undefined);
+  const address = normalizeParam(params.address as string | string[] | undefined);
+  const emergencyPhone = normalizeParam(params.emergencyPhone as string | string[] | undefined);
 
   const [childName, setChildName] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -96,6 +89,11 @@ export default function ChildInfoScreen() {
     if (!validateBirthDate(birthDate)) {
       setBirthDateTouched(true);
       showFormError('生年月日は正しい形式（例: 2020/04/15）で入力してください。');
+      return;
+    }
+
+    if (!email || !password || !parentName || !phoneNumber || !address || !emergencyPhone) {
+      showFormError('登録情報が不足しています。最初から入力し直してください。', '登録エラー');
       return;
     }
 

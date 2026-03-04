@@ -271,6 +271,35 @@ lib/application/
 
 ここではまだ PDF 変換を必須にしない。
 
+#### PoC 実装（2026-03-04）
+
+最小レンダラ PoC として、テンプレート ZIP を展開して `sheet1.xml` の対象セルのみを更新し、再 zip 化するスクリプトを追加した。
+
+- `scripts/render-employment-certificate-poc.js`
+
+実行:
+
+```bash
+node scripts/render-employment-certificate-poc.js
+```
+
+変則就労の入力例:
+
+```bash
+node scripts/render-employment-certificate-poc.js docs/examples/employment_variable_input.json artifacts/employment_certificate_poc_variable.xlsx
+```
+
+この PoC は以下を確認する目的:
+
+- `xlsx` 再保存で壊れやすい `mergeCells` / `dataValidations` を保持したまま値埋めできるか
+- `固定就労` と `変則就労` の主要セルへ書き込みできるか
+- 既存 UI の新スキーマをテンプレートセルへ写せるか
+
+制約:
+
+- 主要項目のみ（帳票全項目ではない）
+- ブラウザ直接実行ではなく Node CLI 前提
+
 ### Phase 2: Word 帳票を自動入力できるようにする
 
 対象:

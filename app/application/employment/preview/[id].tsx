@@ -11,17 +11,22 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChevronLeft, FileText } from 'lucide-react-native';
+import { ChevronLeft, Download, FileText } from 'lucide-react-native';
 import Footer from '../../../../components/Footer';
 import { colors } from '../../../../constants/colors';
 import {
   EmploymentCertificateData,
   normalizeEmploymentCertificateData,
 } from '../../../../utils/excelFieldMappings';
+import {
+  downloadExcel,
+  generateEmploymentCertificateExcel,
+} from '../../../../utils/excelGenerator';
 
 export default function EmploymentCertificatePreviewScreen() {
   const router = useRouter();
   const [formData, setFormData] = useState<EmploymentCertificateData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     // AsyncStorageからデータを読み込み
@@ -43,7 +48,30 @@ export default function EmploymentCertificatePreviewScreen() {
     };
 
     loadData();
-  }, []);
+  }, [router]);
+
+  const handleDownloadFilledExcel = async () => {
+    if (!formData) return;
+
+    setIsGenerating(true);
+    try {
+      const buffer = await generateEmploymentCertificateExcel(formData);
+      const date = new Date().toISOString().split('T')[0];
+      const applicant = (formData.parentName || '申請者').replace(/\s+/g, '');
+      const filename = `就労証明書_${applicant}_${date}.xlsx`;
+      await downloadExcel(buffer, filename);
+    } catch (error) {
+      console.error('Failed to generate excel:', error);
+      Alert.alert(
+        'エラー',
+        error instanceof Error
+          ? error.message
+          : '入力済みExcelの生成に失敗しました'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   if (!formData) {
     return (
@@ -73,9 +101,10 @@ export default function EmploymentCertificatePreviewScreen() {
             <Text style={styles.noticeText}>
               下記の入力内容を確認してください。
               {'\n\n'}
-              就労証明書のExcelテンプレートは、お勤め先の会社または札幌市のWebサイトからダウンロードしてください。
+              「入力済みExcelをダウンロード」を押すと、入力内容を反映した
+              就労証明書ファイルを生成できます。
               {'\n\n'}
-              この画面の内容を参考に、Excelファイルに手動で入力してください。
+              生成後は会社側で最終確認のうえ提出してください。
             </Text>
           </View>
 
@@ -235,7 +264,17 @@ export default function EmploymentCertificatePreviewScreen() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.primaryButton, styles.primaryButtonFull]}
+          style={styles.secondaryButton}
+          onPress={handleDownloadFilledExcel}
+          disabled={isGenerating}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {isGenerating ? '生成中...' : '入力済みExcelをダウンロード'}
+          </Text>
+          {!isGenerating && <Download size={16} color={colors.textMain} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.primaryButton}
           onPress={() => router.back()}
         >
           <Text style={styles.primaryButtonText}>戻って編集</Text>
@@ -368,6 +407,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },

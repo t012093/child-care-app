@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import { createMockSupabaseClient } from './supabase.mock';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -6,6 +8,7 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // 環境変数がない場合はモックを使用
 const USE_MOCK = !supabaseUrl || !supabaseAnonKey;
+export const SUPABASE_CONFIGURED = !USE_MOCK;
 
 if (USE_MOCK) {
   console.warn('⚠️  Supabase環境変数が設定されていません。モックモードで動作します。');
@@ -14,7 +17,20 @@ if (USE_MOCK) {
 
 export const supabase = USE_MOCK
   ? (createMockSupabaseClient() as any)
-  : createClient(supabaseUrl!, supabaseAnonKey!);
+  : createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: Platform.OS === 'web'
+        ? {
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true,
+          }
+        : {
+            storage: AsyncStorage,
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false,
+          },
+    });
 
 // ============================================================================
 // Database Types
@@ -88,6 +104,15 @@ export type Reservation = {
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   reservation_type?: '一時預かり' | '見学' | '相談';
   notes?: string;
+  facility_name?: string;
+  parent_name?: string;
+  parent_phone?: string;
+  parent_email?: string;
+  child_name?: string;
+  child_birth_date?: string;
+  allergies?: string[];
+  medical_notes?: string;
+  special_requests?: string;
 
   // 新規フィールド
   confirmed_by?: string;

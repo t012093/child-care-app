@@ -80,11 +80,12 @@ export default function ChildInfoScreen() {
       // ユーザーデータを作成して登録
       const userData = {
         email,
+        password,
         name: parentName,
         parentInfo: {
           phone: phoneNumber,
           address,
-          emergencyContact: `${emergencyContact} (${emergencyPhone})`,
+          emergencyContact: emergencyPhone,
         },
         children: [{
           id: Date.now().toString(),
@@ -96,9 +97,10 @@ export default function ChildInfoScreen() {
       };
 
       await register(userData);
-      // 登録成功時はAuthContextが自動的にナビゲーションを処理
+      router.replace('/(tabs)/profile');
     } catch (error) {
       Alert.alert('登録エラー', error instanceof Error ? error.message : '登録に失敗しました。');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -113,7 +115,7 @@ export default function ChildInfoScreen() {
       
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <LinearGradient
           colors={[colors.background, colors.accentSoft]}
@@ -121,101 +123,103 @@ export default function ChildInfoScreen() {
         >
           <ScrollView 
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressDot, styles.completedProgressDot]} />
-                <View style={[styles.progressLine, styles.completedProgressLine]} />
-                <View style={[styles.progressDot, styles.activeProgressDot]} />
-              </View>
-              <Text style={styles.title}>お子様の情報</Text>
-              <Text style={styles.subtitle}>
-                安全なご利用のために必要な情報です
-              </Text>
-            </View>
-
-            {/* Form */}
-            <View style={styles.formContainer}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>お子様のお名前 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={childName}
-                  onChangeText={setChildName}
-                  placeholder="山田 次郎"
-                  placeholderTextColor={colors.textSub}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>生年月日 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={birthDate}
-                  onChangeText={setBirthDate}
-                  placeholder="2020/04/15"
-                  placeholderTextColor={colors.textSub}
-                  keyboardType="numeric"
-                />
-                <Text style={styles.helperText}>形式: YYYY/MM/DD</Text>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>アレルギー情報</Text>
-                <TextInput
-                  style={[styles.input, styles.multilineInput]}
-                  value={allergies}
-                  onChangeText={setAllergies}
-                  placeholder="例: 卵、牛乳、小麦（複数の場合は「、」で区切ってください）"
-                  placeholderTextColor={colors.textSub}
-                  multiline
-                  numberOfLines={3}
-                />
-                <Text style={styles.helperText}>アレルギーがない場合は空欄で構いません</Text>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>医療情報・かかりつけ医</Text>
-                <TextInput
-                  style={[styles.input, styles.multilineInput]}
-                  value={medicalInfo}
-                  onChangeText={setMedicalInfo}
-                  placeholder="例: ○○クリニック（Dr.△△）、持病、服用中の薬など"
-                  placeholderTextColor={colors.textSub}
-                  multiline
-                  numberOfLines={3}
-                />
-                <Text style={styles.helperText}>緊急時に必要な医療情報があれば記入してください</Text>
-              </View>
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  🔒 すべての情報は暗号化され、安全に保存されます。{'\n'}
-                  施設利用時の安全確保と緊急時対応のためにのみ使用されます。
+            <View style={styles.contentShell}>
+              <View style={styles.header}>
+                <View style={styles.progressContainer}>
+                  <View style={[styles.progressDot, styles.completedProgressDot]} />
+                  <View style={[styles.progressLine, styles.completedProgressLine]} />
+                  <View style={[styles.progressDot, styles.activeProgressDot]} />
+                </View>
+                <Text style={styles.title}>お子様の情報</Text>
+                <Text style={styles.subtitle}>
+                  安全なご利用のために必要な情報です
                 </Text>
               </View>
-            </View>
+              <View style={styles.formCard}>
+                <View style={styles.formContainer}>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>お子様のお名前 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={childName}
+                      onChangeText={setChildName}
+                      placeholder="山田 次郎"
+                      placeholderTextColor={colors.textSub}
+                    />
+                  </View>
 
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={handleBack}
-              >
-                <Text style={styles.backButtonText}>戻る</Text>
-              </TouchableOpacity>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>生年月日 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={birthDate}
+                      onChangeText={setBirthDate}
+                      placeholder="2020/04/15"
+                      placeholderTextColor={colors.textSub}
+                      keyboardType="numeric"
+                    />
+                    <Text style={styles.helperText}>形式: YYYY/MM/DD</Text>
+                  </View>
 
-              <TouchableOpacity 
-                style={[styles.completeButton, isLoading && styles.disabledButton]}
-                onPress={handleComplete}
-                disabled={isLoading}
-              >
-                <Text style={styles.completeButtonText}>
-                  {isLoading ? '登録中...' : '登録完了'}
-                </Text>
-              </TouchableOpacity>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>アレルギー情報</Text>
+                    <TextInput
+                      style={[styles.input, styles.multilineInput]}
+                      value={allergies}
+                      onChangeText={setAllergies}
+                      placeholder="例: 卵、牛乳、小麦（複数の場合は「、」で区切ってください）"
+                      placeholderTextColor={colors.textSub}
+                      multiline
+                      numberOfLines={3}
+                    />
+                    <Text style={styles.helperText}>アレルギーがない場合は空欄で構いません</Text>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>医療情報・かかりつけ医</Text>
+                    <TextInput
+                      style={[styles.input, styles.multilineInput]}
+                      value={medicalInfo}
+                      onChangeText={setMedicalInfo}
+                      placeholder="例: ○○クリニック（Dr.△△）、持病、服用中の薬など"
+                      placeholderTextColor={colors.textSub}
+                      multiline
+                      numberOfLines={3}
+                    />
+                    <Text style={styles.helperText}>緊急時に必要な医療情報があれば記入してください</Text>
+                  </View>
+
+                  <View style={styles.infoBox}>
+                    <Text style={styles.infoText}>
+                      すべての情報は暗号化され、安全に保存されます。{'\n'}
+                      施設利用時の安全確保と緊急時対応のためにのみ使用されます。
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={handleBack}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.backButtonText}>戻る</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.completeButton, isLoading && styles.disabledButton]}
+                    onPress={handleComplete}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.completeButtonText}>
+                      {isLoading ? '登録中...' : '登録完了'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </ScrollView>
         </LinearGradient>
@@ -238,10 +242,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  contentShell: {
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 560 : undefined,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'web' ? 24 : 40,
     paddingBottom: 32,
   },
   progressContainer: {
@@ -289,7 +299,18 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    marginBottom: 32,
+  },
+  formCard: {
+    ...(Platform.OS === 'web' && {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      padding: 24,
+      shadowColor: '#11332B',
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.08,
+      shadowRadius: 32,
+      elevation: 6,
+    }),
   },
   inputContainer: {
     marginBottom: 20,
@@ -325,6 +346,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
+    marginBottom: 24,
   },
   infoText: {
     fontSize: 14,
@@ -335,7 +357,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
+    marginTop: 8,
   },
   backButton: {
     flex: 1,

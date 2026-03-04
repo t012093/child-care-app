@@ -15,6 +15,7 @@ import {
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/constants/colors';
+import { supabase } from '@/lib/supabase';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -39,13 +40,18 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: 実際のパスワードリセット機能を実装
-      // ここでは一時的に成功をシミュレート
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) {
+        throw error;
+      }
       setIsEmailSent(true);
     } catch (error) {
-      Alert.alert('エラー', 'メールの送信に失敗しました。しばらく後でもう一度お試しください。');
+      Alert.alert(
+        'エラー',
+        error instanceof Error
+          ? error.message
+          : 'メールの送信に失敗しました。しばらく後でもう一度お試しください。'
+      );
     } finally {
       setIsLoading(false);
     }

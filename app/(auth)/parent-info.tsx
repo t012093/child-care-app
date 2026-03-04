@@ -78,7 +78,7 @@ export default function ParentInfoScreen() {
       
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <LinearGradient
           colors={[colors.background, colors.accentSoft]}
@@ -86,108 +86,110 @@ export default function ParentInfoScreen() {
         >
           <ScrollView 
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressDot, styles.activeProgressDot]} />
-                <View style={styles.progressLine} />
-                <View style={styles.progressDot} />
-              </View>
-              <Text style={styles.title}>保護者情報</Text>
-              <Text style={styles.subtitle}>
-                施設利用時の連絡先として使用します
-              </Text>
-            </View>
-
-            {/* Form */}
-            <View style={styles.formContainer}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>保護者のお名前 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={parentName}
-                  onChangeText={setParentName}
-                  placeholder="山田 太郎"
-                  placeholderTextColor={colors.textSub}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>電話番号 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  placeholder="090-1234-5678"
-                  placeholderTextColor={colors.textSub}
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>ご住所 *</Text>
-                <TextInput
-                  style={[styles.input, styles.multilineInput]}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder="東京都渋谷区○○○1-2-3"
-                  placeholderTextColor={colors.textSub}
-                  multiline
-                  numberOfLines={2}
-                />
-              </View>
-
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>緊急連絡先</Text>
-                <Text style={styles.sectionDescription}>
-                  保護者と連絡が取れない場合の連絡先
+            <View style={styles.contentShell}>
+              <View style={styles.header}>
+                <View style={styles.progressContainer}>
+                  <View style={[styles.progressDot, styles.activeProgressDot]} />
+                  <View style={styles.progressLine} />
+                  <View style={styles.progressDot} />
+                </View>
+                <Text style={styles.title}>保護者情報</Text>
+                <Text style={styles.subtitle}>
+                  施設利用時の連絡先として使用します
                 </Text>
               </View>
+              <View style={styles.formCard}>
+                <View style={styles.formContainer}>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>保護者のお名前 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={parentName}
+                      onChangeText={setParentName}
+                      placeholder="山田 太郎"
+                      placeholderTextColor={colors.textSub}
+                    />
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>緊急連絡先のお名前 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={emergencyContact}
-                  onChangeText={setEmergencyContact}
-                  placeholder="山田 花子（配偶者・祖父母など）"
-                  placeholderTextColor={colors.textSub}
-                />
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>電話番号 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={phoneNumber}
+                      onChangeText={setPhoneNumber}
+                      placeholder="090-1234-5678"
+                      placeholderTextColor={colors.textSub}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>ご住所 *</Text>
+                    <TextInput
+                      style={[styles.input, styles.multilineInput]}
+                      value={address}
+                      onChangeText={setAddress}
+                      placeholder="東京都渋谷区○○○1-2-3"
+                      placeholderTextColor={colors.textSub}
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>緊急連絡先</Text>
+                    <Text style={styles.sectionDescription}>
+                      保護者と連絡が取れない場合の連絡先
+                    </Text>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>緊急連絡先のお名前 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={emergencyContact}
+                      onChangeText={setEmergencyContact}
+                      placeholder="山田 花子（配偶者・祖父母など）"
+                      placeholderTextColor={colors.textSub}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>緊急連絡先の電話番号 *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={emergencyPhone}
+                      onChangeText={setEmergencyPhone}
+                      placeholder="090-9876-5432"
+                      placeholderTextColor={colors.textSub}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={handleBack}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.backButtonText}>戻る</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.nextButton, isLoading && styles.disabledButton]}
+                    onPress={handleNext}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.nextButtonText}>
+                      {isLoading ? '処理中...' : '次へ'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>緊急連絡先の電話番号 *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={emergencyPhone}
-                  onChangeText={setEmergencyPhone}
-                  placeholder="090-9876-5432"
-                  placeholderTextColor={colors.textSub}
-                  keyboardType="phone-pad"
-                />
-              </View>
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={handleBack}
-              >
-                <Text style={styles.backButtonText}>戻る</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.nextButton, isLoading && styles.disabledButton]}
-                onPress={handleNext}
-                disabled={isLoading}
-              >
-                <Text style={styles.nextButtonText}>
-                  {isLoading ? '処理中...' : '次へ'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </ScrollView>
         </LinearGradient>
@@ -210,10 +212,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  contentShell: {
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 560 : undefined,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'web' ? 24 : 40,
     paddingBottom: 32,
   },
   progressContainer: {
@@ -253,7 +261,18 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    marginBottom: 32,
+  },
+  formCard: {
+    ...(Platform.OS === 'web' && {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      padding: 24,
+      shadowColor: '#11332B',
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.08,
+      shadowRadius: 32,
+      elevation: 6,
+    }),
   },
   inputContainer: {
     marginBottom: 20,
@@ -296,7 +315,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
+    marginTop: 8,
   },
   backButton: {
     flex: 1,

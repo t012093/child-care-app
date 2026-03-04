@@ -1,15 +1,8 @@
-const PERSISTED_FACILITY_DISTRICTS = new Set([
-  'central',
-  'north',
-  'east',
-  'white-stone',
-  'atsubetsu',
-  'toyohira',
-  'kiyota',
-  'south',
-  'west',
-  'teine',
-]);
+import { prefectures } from '@/constants/regions';
+
+const PERSISTED_FACILITY_DISTRICTS = new Set(
+  prefectures.flatMap((prefecture) => prefecture.districts.map((district) => district.id))
+);
 
 export function getPersistedFacilityDistrict(district?: string | null) {
   if (!district) return null;

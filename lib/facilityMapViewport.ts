@@ -39,23 +39,83 @@ function averageFacilityCoordinates(facilities: Facility[]) {
   };
 }
 
-function inferDistrictMatch(address: string) {
-  const normalizedAddress = normalizeText(address);
+function buildDistrictHints(prefectureName: string, districtLabel: string, allowLooseHints: boolean) {
+  const normalizedLabel = normalizeText(districtLabel);
+  const hints = new Set<string>();
 
-  for (const prefecture of prefectures) {
-    for (const district of prefecture.districts) {
-      const normalizedLabel = normalizeText(district.label);
+  if (normalizedLabel) {
+    hints.add(normalizedLabel);
+  }
 
-      if (normalizedLabel && normalizedAddress.includes(normalizedLabel)) {
-        return {
-          prefecture: prefecture.name,
-          districtId: district.id,
-        };
+  if (prefectureName === '北海道' && districtLabel.endsWith('区')) {
+    hints.add(normalizeText(`札幌市${districtLabel}`));
+  }
+
+  if (/(地区|地域)$/.test(districtLabel)) {
+    hints.add(normalizeText(districtLabel.replace(/(地区|地域)$/, '')));
+  }
+
+  if (allowLooseHints && prefectureName === '富山県' && districtLabel.startsWith('富山市')) {
+    const districtCore = districtLabel
+      .replace(/^富山市/, '')
+      .replace(/(地区|地域)$/, '');
+
+    if (districtCore) {
+      hints.add(normalizeText(`富山市${districtCore}`));
+      hints.add(normalizeText(`${districtCore}町`));
+
+      if (districtCore.length >= 3) {
+        hints.add(normalizeText(districtCore));
       }
     }
   }
 
-  return null;
+  return Array.from(hints).filter((hint) => hint.length >= 2);
+}
+
+function inferDistrictMatch(address: string, preferredPrefecture?: string) {
+  const normalizedAddress = normalizeText(address);
+  const targetPrefectures = preferredPrefecture
+    ? prefectures.filter((prefecture) => prefecture.name === preferredPrefecture)
+    : prefectures;
+
+  const allowLooseHints = Boolean(preferredPrefecture);
+  let bestMatch:
+    | {
+        prefecture: string;
+        districtId: string;
+        score: number;
+      }
+    | null = null;
+
+  for (const prefecture of targetPrefectures) {
+    for (const district of prefecture.districts) {
+      const hints = buildDistrictHints(prefecture.name, district.label, allowLooseHints);
+
+      for (const hint of hints) {
+        if (!normalizedAddress.includes(hint)) {
+          continue;
+        }
+
+        if (!bestMatch || hint.length > bestMatch.score) {
+          bestMatch = {
+            prefecture: prefecture.name,
+            districtId: district.id,
+            score: hint.length,
+          };
+        }
+      }
+    }
+  }
+
+  if (!bestMatch) {
+    return null;
+  }
+
+  return {
+    prefecture: bestMatch.prefecture,
+    districtId: bestMatch.districtId,
+  };
 }
 
 function inferPrefecture(address: string) {
@@ -107,7 +167,8 @@ export function getFacilityMapViewportForAddress(
     return fallback;
   }
 
-  const districtMatch = inferDistrictMatch(address);
+  const prefectureNameFromAddress = inferPrefecture(address);
+  const districtMatch = inferDistrictMatch(address, prefectureNameFromAddress);
   if (districtMatch) {
     const districtFacilities = facilities.filter(
       (facility) =>
@@ -123,7 +184,7 @@ export function getFacilityMapViewportForAddress(
     }
   }
 
-  const prefectureName = districtMatch?.prefecture ?? inferPrefecture(address);
+  const prefectureName = districtMatch?.prefecture ?? prefectureNameFromAddress;
   if (!prefectureName) {
     return fallback;
   }

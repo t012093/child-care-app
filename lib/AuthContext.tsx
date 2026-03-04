@@ -530,8 +530,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (userData: RegisterInput) => {
-    const email = userData.email.trim();
-    const password = userData.password.trim();
+    const email = typeof userData.email === 'string' ? userData.email.trim() : '';
+    const password = typeof userData.password === 'string' ? userData.password.trim() : '';
+
+    if (!email || !password) {
+      throw new Error('登録情報が不足しています。最初から入力し直してください。');
+    }
 
     try {
       const metadata = {

@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as XLSX from 'xlsx';
 import { EmploymentCertificateData } from './excelFieldMappings';
+import employmentCertificateTemplate from '../assets/templates/employment_certificate.xlsx';
 
 const INDUSTRY_CHECKBOX_MAP: Record<string, string> = {
   '農業・林業': 'I14',
@@ -203,6 +204,13 @@ function toArrayBuffer(value: unknown): ArrayBuffer {
   throw new Error('Unsupported output type from CFB.write');
 }
 
+function getTemplateAssetUrl(): string {
+  if (typeof employmentCertificateTemplate !== 'string') {
+    throw new Error('Excel template URL is not available on this platform');
+  }
+  return employmentCertificateTemplate;
+}
+
 function applyEmploymentTemplateData(
   sheetXml: string,
   data: EmploymentCertificateData
@@ -321,7 +329,7 @@ export async function downloadTemplateExcel(filename: string): Promise<void> {
   }
 
   try {
-    const templateAsset = require('../assets/templates/employment_certificate.xlsx');
+    const templateAsset = getTemplateAssetUrl();
     const response = await fetch(templateAsset);
     if (!response.ok) {
       throw new Error(`Template not found: ${response.status}`);
@@ -352,7 +360,7 @@ export async function generateEmploymentCertificateExcel(
     throw new Error('Excel generation is currently supported on web only');
   }
 
-  const templateAsset = require('../assets/templates/employment_certificate.xlsx');
+  const templateAsset = getTemplateAssetUrl();
   const response = await fetch(templateAsset);
   if (!response.ok) {
     throw new Error(`Template fetch failed: ${response.status}`);

@@ -1,0 +1,1 @@
+-- Intentionally empty. Migrations provide the current baseline for local development.

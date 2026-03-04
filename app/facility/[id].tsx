@@ -124,7 +124,12 @@ export default function FacilityDetailScreen() {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.actionButton, styles.primaryButton]}
-            onPress={() => router.push('/reserve')}
+            onPress={() =>
+              router.push({
+                pathname: '/reservation/new',
+                params: { facilityId: facility.id },
+              })
+            }
           >
             <Text style={styles.primaryButtonText}>予約する</Text>
           </TouchableOpacity>

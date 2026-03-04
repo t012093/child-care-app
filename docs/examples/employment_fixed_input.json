@@ -1,0 +1,15 @@
+{
+  "scheduleType": "fixed",
+  "monthlyWorkDays": "21",
+  "weeklyWorkDays": "5",
+  "fixedWorkStartTime": "08:15",
+  "fixedWorkEndTime": "17:45",
+  "fixedBreakMinutes": "60",
+  "variableWorkHoursUnit": "",
+  "variableWorkHours": "",
+  "variableWorkDaysUnit": "",
+  "variableWorkDays": "",
+  "variableWorkStartTime": "",
+  "variableWorkEndTime": "",
+  "variableBreakMinutes": ""
+}

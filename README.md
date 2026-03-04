@@ -117,6 +117,15 @@ npm run dev:tunnel
 |---------|------|
 | `npm run build:web` | Web版のプロダクションビルド作成 |
 | `npm run lint` | コードのリントチェック |
+| `npm run test:excel` | 就労証明書Excelの回帰チェック（fixed/variable） |
+
+## Excel運用ルール
+
+就労証明書の Excel テンプレート・マッピングを変更する場合は、次の運用を必須にします。
+
+1. ローカルで `npm run test:excel` を実行してからコミットする
+2. `main` へは直接 push せず、必ず PR で反映する
+3. PR の必須チェック `Excel Regression / test-excel` が通るまでマージしない
 
 ## 技術スタック
 

@@ -133,7 +133,28 @@ npm run web
 - ゲストユーザー時の予約取得エラー
 - 実アカウントでの予約送信完了は未検証
 
-## 11. 関連ドキュメント
+## 11. 住所ベース地図中心の確認（2026-03-05）
+
+登録済みユーザーの住所を基準に、`/reserve` の地図初期中心が切り替わることを確認しました。
+
+確認手順:
+
+1. `マイページ > 編集` で住所を入力・保存する（例: `富山県富山市鹿島町一丁目3-16`）
+2. `保育施設を検索する` へ遷移する
+3. Google Maps の表示中心が住所エリア付近になることを確認する
+
+取得スクリーンショット:
+
+- プロフィール住所入力: `../artifacts/screenshots/profile-address-for-map-center-20260305.png`
+- 地図領域: `../artifacts/screenshots/reserve-map-centered-by-user-address-20260305.png`
+- 画面全体: `../artifacts/screenshots/reserve-page-user-region-centered-20260305.png`
+
+補足:
+
+- 本確認時の Google Maps リンク中心座標は `ll=36.696964,137.19575`（富山周辺）
+- 住所未入力時は既定の地図中心（東京）を使用します
+
+## 12. 関連ドキュメント
 
 - Web 確認結果の詳細: [WEB_TEST_REPORT_20260303.md](./WEB_TEST_REPORT_20260303.md)
 - Google Maps 設定: [GOOGLE_MAPS_SETUP.md](./GOOGLE_MAPS_SETUP.md)

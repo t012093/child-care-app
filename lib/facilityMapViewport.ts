@@ -7,7 +7,7 @@ export interface FacilityMapViewport {
 }
 
 export const DEFAULT_FACILITY_MAP_VIEWPORT: FacilityMapViewport = {
-  center: { lat: 43.0642, lng: 141.3469 },
+  center: { lat: 35.6762, lng: 139.6503 },
   zoom: 13,
 };
 

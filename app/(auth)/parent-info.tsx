@@ -25,34 +25,43 @@ export default function ParentInfoScreen() {
   const [address, setAddress] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading] = useState(false);
+
+  const showFormError = (message: string, title = '入力エラー') => {
+    setErrorMessage(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
 
   const handleNext = async () => {
     if (!parentName.trim()) {
-      Alert.alert('入力エラー', '保護者のお名前を入力してください。');
+      showFormError('保護者のお名前を入力してください。');
       return;
     }
 
     if (!phoneNumber.trim()) {
-      Alert.alert('入力エラー', '電話番号を入力してください。');
+      showFormError('電話番号を入力してください。');
       return;
     }
 
     if (!address.trim()) {
-      Alert.alert('入力エラー', 'ご住所を入力してください。');
+      showFormError('ご住所を入力してください。');
       return;
     }
 
     if (!emergencyContact.trim()) {
-      Alert.alert('入力エラー', '緊急連絡先の方のお名前を入力してください。');
+      showFormError('緊急連絡先の方のお名前を入力してください。');
       return;
     }
 
     if (!emergencyPhone.trim()) {
-      Alert.alert('入力エラー', '緊急連絡先の電話番号を入力してください。');
+      showFormError('緊急連絡先の電話番号を入力してください。');
       return;
     }
 
+    setErrorMessage(null);
     // 次の画面に遷移（子ども情報入力）
     router.push({
       pathname: '/(auth)/child-info',
@@ -107,7 +116,12 @@ export default function ParentInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={parentName}
-                      onChangeText={setParentName}
+                      onChangeText={(value) => {
+                        setParentName(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="山田 太郎"
                       placeholderTextColor={colors.textSub}
                     />
@@ -118,7 +132,12 @@ export default function ParentInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={phoneNumber}
-                      onChangeText={setPhoneNumber}
+                      onChangeText={(value) => {
+                        setPhoneNumber(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="090-1234-5678"
                       placeholderTextColor={colors.textSub}
                       keyboardType="phone-pad"
@@ -130,7 +149,12 @@ export default function ParentInfoScreen() {
                     <TextInput
                       style={[styles.input, styles.multilineInput]}
                       value={address}
-                      onChangeText={setAddress}
+                      onChangeText={(value) => {
+                        setAddress(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="東京都渋谷区○○○1-2-3"
                       placeholderTextColor={colors.textSub}
                       multiline
@@ -150,7 +174,12 @@ export default function ParentInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={emergencyContact}
-                      onChangeText={setEmergencyContact}
+                      onChangeText={(value) => {
+                        setEmergencyContact(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="山田 花子（配偶者・祖父母など）"
                       placeholderTextColor={colors.textSub}
                     />
@@ -161,12 +190,23 @@ export default function ParentInfoScreen() {
                     <TextInput
                       style={styles.input}
                       value={emergencyPhone}
-                      onChangeText={setEmergencyPhone}
+                      onChangeText={(value) => {
+                        setEmergencyPhone(value);
+                        if (errorMessage) {
+                          setErrorMessage(null);
+                        }
+                      }}
                       placeholder="090-9876-5432"
                       placeholderTextColor={colors.textSub}
                       keyboardType="phone-pad"
                     />
                   </View>
+
+                  {errorMessage && (
+                    <View style={styles.errorBox}>
+                      <Text style={styles.errorText}>{errorMessage}</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.buttonContainer}>
@@ -311,6 +351,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSub,
     lineHeight: 20,
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    lineHeight: 18,
+    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',

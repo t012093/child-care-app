@@ -4,11 +4,9 @@ import {
   Calendar,
   Filter,
   ChevronLeft,
-  Search,
   CheckSquare,
   Check,
   XCircle,
-  Download,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import ReservationListItem from '../../components/ReservationListItem';

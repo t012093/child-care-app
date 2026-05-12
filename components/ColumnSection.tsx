@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
-import { mockArticles, categoryColors } from '../constants/columnData';
+import { categoryColors, type Article } from '../constants/columnData';
+import { fetchFeaturedArticles } from '../lib/articleService';
 
 interface ColumnSectionProps {
   onColumnPress?: (columnId: string) => void;
@@ -12,11 +13,11 @@ interface ColumnSectionProps {
 
 export default function ColumnSection({ onColumnPress, onSeeAllPress }: ColumnSectionProps) {
   const { horizontalPadding, isDesktop } = useResponsive();
+  const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
 
-  // 注目記事またはカテゴリーが異なる最新3記事を取得
-  const featuredArticles = mockArticles
-    .filter(article => article.isFeatured)
-    .slice(0, 3);
+  useEffect(() => {
+    fetchFeaturedArticles(3).then(setFeaturedArticles).catch(() => {});
+  }, []);
 
   const containerStyle = [
     styles.container,

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  Building2,
   Lock,
   Mail,
   Bell,
@@ -31,6 +32,7 @@ import {
 import { colors } from '../../constants/colors';
 import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '../../lib/AuthContext';
+import { isFacilityApprovalAdmin } from '@/lib/facilityApprovalService';
 
 interface SettingItem {
   icon: React.ComponentType<any>;
@@ -49,6 +51,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+  const showFacilityApproval = isFacilityApprovalAdmin(user?.id);
 
   const handleLogout = () => {
     Alert.alert(
@@ -103,7 +106,7 @@ export default function SettingsScreen() {
         {
           icon: Mail,
           label: 'メールアドレス変更',
-          onPress: () => console.log('Email change'),
+          onPress: () => Alert.alert('メールアドレス変更', '現在この機能は準備中です。'),
           showChevron: true,
         },
       ],
@@ -120,7 +123,7 @@ export default function SettingsScreen() {
         {
           icon: Plus,
           label: 'お子様を追加',
-          onPress: () => console.log('Add child'),
+          onPress: () => router.push('/(tabs)/profile'),
           showChevron: true,
         },
       ],
@@ -162,7 +165,7 @@ export default function SettingsScreen() {
         {
           icon: Globe,
           label: '言語設定',
-          onPress: () => console.log('Language settings'),
+          onPress: () => Alert.alert('言語設定', '現在は日本語のみ対応しています。'),
           showChevron: true,
         },
         {
@@ -179,30 +182,44 @@ export default function SettingsScreen() {
         {
           icon: HelpCircle,
           label: 'ヘルプ・FAQ',
-          onPress: () => console.log('Help'),
+          onPress: () => router.push('/support/faq'),
           showChevron: true,
         },
         {
           icon: Phone,
           label: 'お問い合わせ',
-          onPress: () => console.log('Contact'),
+          onPress: () => router.push('/support/contact'),
           showChevron: true,
         },
         {
           icon: FileText,
           label: '利用規約',
-          onPress: () => console.log('Terms'),
+          onPress: () => router.push('/(onboarding)/terms'),
           showChevron: true,
         },
         {
           icon: Shield,
           label: 'プライバシーポリシー',
-          onPress: () => console.log('Privacy'),
+          onPress: () => router.push('/(onboarding)/terms'),
           showChevron: true,
         },
       ],
     },
   ];
+
+  if (showFacilityApproval) {
+    settingsSections.push({
+      title: '管理者機能',
+      items: [
+        {
+          icon: Building2,
+          label: '施設承認管理',
+          onPress: () => router.push('/admin/facility-approvals'),
+          showChevron: true,
+        },
+      ],
+    });
+  }
 
   const userName = user?.name || 'ゲストユーザー';
   const userEmail = user?.email || '';

@@ -27,14 +27,6 @@ const facilityTypes = [
   { id: 'clinic', label: 'クリニック' },
 ];
 
-const ageRanges = [
-  { id: 'newborn', label: '産休明け～' },
-  { id: '0-6months', label: '生後6か月～' },
-  { id: '1year', label: '1歳児～' },
-  { id: '2year', label: '2歳児～' },
-  { id: '3year', label: '3歳児～' },
-];
-
 const capacityRanges = [
   { id: 'small', label: '少人数（1-10名）' },
   { id: 'medium', label: '中規模（11-30名）' },
@@ -43,7 +35,7 @@ const capacityRanges = [
 
 export default function FacilityFilter({ filters, onFilterChange, onReset }: FacilityFilterProps) {
   // 選択された都道府県に応じた市区町村リストを動的に取得
-  const [availableDistricts, setAvailableDistricts] = useState<Array<{ id: string; label: string }>>([]);
+  const [availableDistricts, setAvailableDistricts] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     // 選択された都道府県がある場合、その市区町村リストを取得
@@ -86,13 +78,6 @@ export default function FacilityFilter({ filters, onFilterChange, onReset }: Fac
       ? filters.districts.filter(d => d !== districtId)
       : [...filters.districts, districtId];
     onFilterChange({ ...filters, districts: newDistricts });
-  };
-
-  const toggleAgeRange = (ageId: string) => {
-    const newAges = filters.ageRanges.includes(ageId)
-      ? filters.ageRanges.filter(a => a !== ageId)
-      : [...filters.ageRanges, ageId];
-    onFilterChange({ ...filters, ageRanges: newAges });
   };
 
   const toggleSaturday = () => {

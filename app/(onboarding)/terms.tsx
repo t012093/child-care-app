@@ -32,7 +32,7 @@ export default function TermsScreen() {
     try {
       await completeOnboarding();
       router.replace('/(auth)/login');
-    } catch (error) {
+    } catch {
       Alert.alert('エラー', 'オンボーディングの完了に失敗しました。');
     }
   };

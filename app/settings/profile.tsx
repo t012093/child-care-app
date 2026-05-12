@@ -62,7 +62,7 @@ export default function ProfileEditScreen() {
       Alert.alert('保存完了', 'プロフィールを更新しました', [
         { text: 'OK', onPress: () => router.back() },
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('エラー', 'プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);
@@ -80,8 +80,8 @@ export default function ProfileEditScreen() {
       '写真の変更元を選択してください',
       [
         { text: 'キャンセル', style: 'cancel' },
-        { text: 'カメラで撮影', onPress: () => console.log('Camera') },
-        { text: 'ライブラリから選択', onPress: () => console.log('Library') },
+        { text: 'カメラで撮影', onPress: () => Alert.alert('準備中', 'カメラ機能は準備中です。') },
+        { text: 'ライブラリから選択', onPress: () => Alert.alert('準備中', 'ライブラリ機能は準備中です。') },
       ]
     );
   };

@@ -1,43 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Star, MapPin } from 'lucide-react-native';
 import { colors } from '../constants/colors';
-
-interface Review {
-  id: string;
-  userName: string;
-  facilityName: string;
-  rating: number;
-  comment: string;
-  location: string;
-}
-
-const sampleReviews: Review[] = [
-  {
-    id: '1',
-    userName: '田中さん',
-    facilityName: 'さくら保育園',
-    rating: 5,
-    comment: '先生が優しくて安心して預けられます！息子も毎回楽しみにしています。',
-    location: '渋谷区',
-  },
-  {
-    id: '2',
-    userName: '佐藤さん',
-    facilityName: 'ひまわり託児所',
-    rating: 4,
-    comment: '駅近で便利！施設も清潔でとても良いです。',
-    location: '新宿区',
-  },
-  {
-    id: '3',
-    userName: '鈴木さん',
-    facilityName: 'コスモス幼児園',
-    rating: 5,
-    comment: '急な予約にも対応してくれて助かりました。',
-    location: '世田谷区',
-  },
-];
+import { fetchRecentReviews, type CommunityReview } from '../lib/reviewService';
 
 interface CommunityReviewCardProps {
   onReviewPress?: (reviewId: string) => void;
@@ -48,6 +13,12 @@ export default function CommunityReviewCard({
   onReviewPress,
   onSeeAllPress,
 }: CommunityReviewCardProps) {
+  const [reviews, setReviews] = useState<CommunityReview[]>([]);
+
+  useEffect(() => {
+    fetchRecentReviews(3).then(setReviews).catch(() => {});
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -62,7 +33,7 @@ export default function CommunityReviewCard({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {sampleReviews.map((review) => (
+        {reviews.map((review) => (
           <TouchableOpacity
             key={review.id}
             style={styles.reviewCard}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft, Bell, Mail, Calendar, MessageSquare, Volume2 } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useRouter, Stack } from 'expo-router';
+
+const STORAGE_KEY = 'notification_settings';
 
 interface NotificationSetting {
   id: string;
@@ -31,7 +34,31 @@ export default function NotificationsScreen() {
   const [messageNotification, setMessageNotification] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const handleSave = () => {
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+      if (!raw) return;
+      try {
+        const saved = JSON.parse(raw);
+        if (typeof saved.push === 'boolean') setPushEnabled(saved.push);
+        if (typeof saved.email === 'boolean') setEmailEnabled(saved.email);
+        if (typeof saved.reservation === 'boolean') setReservationReminder(saved.reservation);
+        if (typeof saved.facility === 'boolean') setFacilityNews(saved.facility);
+        if (typeof saved.message === 'boolean') setMessageNotification(saved.message);
+        if (typeof saved.sound === 'boolean') setSoundEnabled(saved.sound);
+      } catch {}
+    });
+  }, []);
+
+  const handleSave = async () => {
+    const settings = {
+      push: pushEnabled,
+      email: emailEnabled,
+      reservation: reservationReminder,
+      facility: facilityNews,
+      message: messageNotification,
+      sound: soundEnabled,
+    };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     Alert.alert('保存完了', '通知設定を更新しました', [
       { text: 'OK', onPress: () => router.back() },
     ]);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
   Share,
   Platform,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
-import { ChevronLeft, Clock, Heart, Share2, ArrowUp } from 'lucide-react-native';
+import { ChevronLeft, Heart, Share2, ArrowUp } from 'lucide-react-native';
 import { columnColors } from '../../constants/colors';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { mockArticles, categoryColors } from '../../constants/columnData';
+import { categoryColors, type Article } from '../../constants/columnData';
+import { fetchArticleById, fetchArticles } from '../../lib/articleService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_WEB = Platform.OS === 'web';
@@ -25,8 +27,36 @@ export default function ColumnDetailScreen() {
   const { id } = useLocalSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const article = mockArticles.find((a) => a.id === id);
+  useEffect(() => {
+    const articleId = Array.isArray(id) ? id[0] : id;
+    if (!articleId) return;
+
+    setIsLoading(true);
+    Promise.all([
+      fetchArticleById(articleId),
+      fetchArticles(),
+    ])
+      .then(([found, all]) => {
+        setArticle(found);
+        setAllArticles(all);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <ActivityIndicator size="large" color={columnColors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!article) {
     return (
@@ -47,12 +77,12 @@ export default function ColumnDetailScreen() {
   const categoryInfo = categoryColors[article.category];
 
   // 関連記事（同じカテゴリーの他の記事）
-  const relatedArticles = mockArticles
+  const relatedArticles = allArticles
     .filter((a) => a.category === article.category && a.id !== article.id)
     .slice(0, 3);
 
   // 人気記事（featured記事）
-  const popularArticles = mockArticles
+  const popularArticles = allArticles
     .filter((a) => a.isFeatured && a.id !== article.id)
     .slice(0, 3);
 
@@ -190,7 +220,6 @@ export default function ColumnDetailScreen() {
           <Text style={styles.sectionTitle}>関連記事</Text>
           <View style={styles.relatedList}>
             {relatedArticles.map((relatedArticle) => {
-              const relatedCategoryInfo = categoryColors[relatedArticle.category];
               return (
                 <TouchableOpacity
                   key={relatedArticle.id}

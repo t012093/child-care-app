@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,19 +14,72 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Star, MapPin, Phone, Mail } from 'lucide-react-native';
 import FacilityMap from '../../components/FacilityMap';
 import { colors } from '../../constants/colors';
-import { sampleFacilities } from '../../constants/facilities';
+import { Facility } from '../../constants/facilities';
+import { fetchFacilityById } from '../../lib/facilityCatalogService';
 
 export default function FacilityDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const routeFacilityId = Array.isArray(id) ? id[0] : id;
+  const [facility, setFacility] = useState<Facility | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const facility = sampleFacilities.find(f => f.id === id);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFacility = async () => {
+      if (!routeFacilityId || typeof routeFacilityId !== 'string') {
+        if (!isMounted) return;
+        setFacility(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const foundFacility = await fetchFacilityById(routeFacilityId);
+        if (!isMounted) return;
+        setFacility(foundFacility);
+      } catch (error) {
+        if (!isMounted) return;
+        setFacility(null);
+        setLoadError(
+          error instanceof Error ? error.message : '施設情報の取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFacility();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeFacilityId]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundText}>施設情報を読み込み中です</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!facility) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>施設が見つかりませんでした</Text>
+          <Text style={styles.notFoundText}>
+            {loadError || '施設が見つかりませんでした'}
+          </Text>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}

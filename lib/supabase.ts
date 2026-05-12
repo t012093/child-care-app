@@ -5,17 +5,22 @@ import { createMockSupabaseClient } from './supabase.mock';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const mockFlag = process.env.EXPO_PUBLIC_USE_MOCK;
 
-// 環境変数がない場合はモックを使用
-const USE_MOCK = !supabaseUrl || !supabaseAnonKey;
-export const SUPABASE_CONFIGURED = !USE_MOCK;
+const hasCreds = Boolean(supabaseUrl && supabaseAnonKey);
+const USE_MOCK = mockFlag === 'true';
+export const SUPABASE_CONFIGURED = hasCreds && !USE_MOCK;
 
 if (USE_MOCK) {
-  console.warn('⚠️  Supabase環境変数が設定されていません。モックモードで動作します。');
-  console.warn('📝 本番環境では .env.local にSupabaseの設定を追加してください。');
+  console.warn('[mock] EXPO_PUBLIC_USE_MOCK=true: モックモードで動作します');
+} else if (!hasCreds) {
+  console.error(
+    '[supabase] EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY が未設定です。\n' +
+    'モックモードを使う場合は EXPO_PUBLIC_USE_MOCK=true を設定してください。'
+  );
 }
 
-export const supabase = USE_MOCK
+export const supabase = (USE_MOCK || !hasCreds)
   ? (createMockSupabaseClient() as any)
   : createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: Platform.OS === 'web'

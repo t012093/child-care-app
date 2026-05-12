@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,45 +8,93 @@ import {
   Platform,
   Alert,
   ScrollView,
-  Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Download, Edit } from 'lucide-react-native';
-import * as FileSystem from 'expo-file-system';
 import { colors } from '../../../constants/colors';
-import { generateApplicationPDF, downloadPDF } from '../../../utils/pdfGenerator';
+import { ApplicationData, downloadPDF } from '../../../utils/pdfGenerator';
 import { downloadAutoFilledPDF } from '../../../utils/pdfAutoFill';
+import { resolveAssetUri } from '../../../utils/downloadHelpers';
 import PdfPreview from '../../../components/PdfPreview';
 import Footer from '../../../components/Footer';
+import { useAuth } from '../../../lib/AuthContext';
+import {
+  fetchApplicationById,
+  SavedApplication,
+} from '../../../lib/applicationService';
 
 export default function PreviewScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [applicationData, setApplicationData] = useState<SavedApplication | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // サンプル申請データ
-  const applicationData = {
-    facilityName: 'さくら保育園',
-    applicationType: '入園申請',
-    parentName: '花田 さゆり',
-    parentPhone: '090-1234-5678',
-    parentEmail: 'sayuri.hanada@example.com',
-    address: '東京都渋谷区桜丘町1-1',
-    childName: '花田 はな',
-    childBirthDate: '2023-05-15',
-    childGender: '女',
-    desiredStartDate: '2025-04-01',
-    notes: '平日9:00-17:00の利用を希望します。',
-  };
+  const applicationId = Array.isArray(id) ? id[0] : id;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadApplication = async () => {
+      if (!applicationId) {
+        if (!isMounted) return;
+        setLoadError('申請書IDが不正です。');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!user || user.id === 'demo-user') {
+        if (!isMounted) return;
+        setLoadError('申請書を表示するには実アカウントでログインしてください。');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const savedApplication = await fetchApplicationById(applicationId, user.id);
+        if (!isMounted) return;
+
+        if (!savedApplication) {
+          setApplicationData(null);
+          setLoadError('指定された申請書が見つかりませんでした。');
+          return;
+        }
+
+        setApplicationData(savedApplication);
+      } catch (error) {
+        if (!isMounted) return;
+        setApplicationData(null);
+        setLoadError(
+          error instanceof Error ? error.message : '申請書データの取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadApplication();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [applicationId, user]);
 
   const handlePreview = async () => {
     setIsGenerating(true);
     try {
       // Web版・モバイル版共通: Metro asset systemを使用
       const asset = require('../../../assets/templates/temporary_care_application.pdf');
-      setPdfUri(asset);
+      const assetUri = resolveAssetUri(asset);
+      setPdfUri(assetUri);
       setShowPdfPreview(true);
     } catch (error) {
       Alert.alert('エラー', 'プレビューの表示に失敗しました');
@@ -57,6 +105,10 @@ export default function PreviewScreen() {
   };
 
   const handleDownload = async () => {
+    if (!applicationData) {
+      return;
+    }
+
     if (Platform.OS !== 'web') {
       Alert.alert('お知らせ', 'ダウンロード機能はWeb版でのみ利用可能です');
       return;
@@ -67,9 +119,13 @@ export default function PreviewScreen() {
     try {
       // Metro asset systemから読み込んだPDFをダウンロード
       const asset = require('../../../assets/templates/temporary_care_application.pdf');
-      const response = await fetch(asset);
+      const assetUri = resolveAssetUri(asset);
+      const response = await fetch(assetUri);
+      if (!response.ok) {
+        throw new Error(`PDF template fetch failed: ${response.status}`);
+      }
       const blob = await response.blob();
-      const filename = `${applicationData.applicationType}_${applicationData.childName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const filename = `${applicationData.applicationType}_${applicationData.childName || '申請書'}_${new Date().toISOString().split('T')[0]}.pdf`;
       await downloadPDF(blob, filename);
       Alert.alert('成功', 'PDFのダウンロードを開始しました');
     } catch (error) {
@@ -85,6 +141,10 @@ export default function PreviewScreen() {
   };
 
   const handleAutoFillDownload = async () => {
+    if (!applicationData) {
+      return;
+    }
+
     if (Platform.OS !== 'web') {
       Alert.alert('お知らせ', '自動入力機能はWeb版でのみ利用可能です');
       return;
@@ -93,13 +153,28 @@ export default function PreviewScreen() {
     setIsGenerating(true);
 
     try {
-      const asset = require('../../../assets/templates/temporary_care_application.pdf');
-      const filename = `${applicationData.applicationType}_${applicationData.childName}_入力済み_${new Date().toISOString().split('T')[0]}.pdf`;
+      const assetUri = resolveAssetUri(
+        require('../../../assets/templates/temporary_care_application.pdf')
+      );
+      const filename = `${applicationData.applicationType}_${applicationData.childName || '申請書'}_入力済み_${new Date().toISOString().split('T')[0]}.pdf`;
+      const pdfData: ApplicationData = {
+        facilityName: applicationData.facilityName || '',
+        applicationType: applicationData.applicationType,
+        parentName: applicationData.parentName || '',
+        parentPhone: applicationData.parentPhone || '',
+        parentEmail: applicationData.parentEmail || '',
+        address: applicationData.address || '',
+        childName: applicationData.childName || '',
+        childBirthDate: applicationData.childBirthDate || '',
+        childGender: applicationData.childGender || '',
+        desiredStartDate: applicationData.desiredStartDate || '',
+        notes: applicationData.notes || '',
+      };
 
       await downloadAutoFilledPDF(
-        asset,
+        assetUri,
         'temporary_care_application',
-        applicationData,
+        pdfData,
         filename
       );
 
@@ -125,13 +200,22 @@ export default function PreviewScreen() {
         </TouchableOpacity>
       </View>
 
-      {showPdfPreview && pdfUri ? (
+      {isLoading ? (
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateTitle}>申請書を読み込み中です</Text>
+        </View>
+      ) : loadError || !applicationData ? (
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateTitle}>申請書を表示できませんでした</Text>
+          <Text style={styles.stateDescription}>{loadError || '不明なエラーが発生しました。'}</Text>
+          <TouchableOpacity style={styles.stateButton} onPress={() => router.back()}>
+            <Text style={styles.stateButtonText}>戻る</Text>
+          </TouchableOpacity>
+        </View>
+      ) : showPdfPreview && pdfUri ? (
         <View style={styles.pdfContainer}>
           <PdfPreview
             uri={pdfUri}
-            onLoadComplete={(numberOfPages) => {
-              console.log(`PDF loaded: ${numberOfPages} pages`);
-            }}
             onError={(error) => {
               console.error('PDF load error:', error);
               Alert.alert('エラー', 'PDFの読み込みに失敗しました');
@@ -153,11 +237,11 @@ export default function PreviewScreen() {
             <Text style={styles.sectionTitle}>施設情報</Text>
             <View style={styles.row}>
               <Text style={styles.label}>施設名:</Text>
-              <Text style={styles.value}>{applicationData.facilityName}</Text>
+              <Text style={styles.value}>{applicationData.facilityName || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>希望開始日:</Text>
-              <Text style={styles.value}>{applicationData.desiredStartDate}</Text>
+              <Text style={styles.value}>{applicationData.desiredStartDate || '-'}</Text>
             </View>
           </View>
 
@@ -165,19 +249,19 @@ export default function PreviewScreen() {
             <Text style={styles.sectionTitle}>保護者情報</Text>
             <View style={styles.row}>
               <Text style={styles.label}>氏名:</Text>
-              <Text style={styles.value}>{applicationData.parentName}</Text>
+              <Text style={styles.value}>{applicationData.parentName || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>電話番号:</Text>
-              <Text style={styles.value}>{applicationData.parentPhone}</Text>
+              <Text style={styles.value}>{applicationData.parentPhone || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>メールアドレス:</Text>
-              <Text style={styles.value}>{applicationData.parentEmail}</Text>
+              <Text style={styles.value}>{applicationData.parentEmail || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>住所:</Text>
-              <Text style={styles.value}>{applicationData.address}</Text>
+              <Text style={styles.value}>{applicationData.address || '-'}</Text>
             </View>
           </View>
 
@@ -185,15 +269,15 @@ export default function PreviewScreen() {
             <Text style={styles.sectionTitle}>お子様情報</Text>
             <View style={styles.row}>
               <Text style={styles.label}>氏名:</Text>
-              <Text style={styles.value}>{applicationData.childName}</Text>
+              <Text style={styles.value}>{applicationData.childName || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>生年月日:</Text>
-              <Text style={styles.value}>{applicationData.childBirthDate}</Text>
+              <Text style={styles.value}>{applicationData.childBirthDate || '-'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>性別:</Text>
-              <Text style={styles.value}>{applicationData.childGender}</Text>
+              <Text style={styles.value}>{applicationData.childGender || '-'}</Text>
             </View>
           </View>
 
@@ -210,6 +294,7 @@ export default function PreviewScreen() {
       )}
 
       {/* 改善されたボタン配置: 3段レイアウト with 優先順位の明確化 */}
+      {applicationData && (
       <View style={styles.actionSection}>
         {/* プライマリーアクション: 自動入力ダウンロード */}
         <TouchableOpacity
@@ -260,6 +345,7 @@ export default function PreviewScreen() {
           💡 「自動入力してダウンロード」なら申請書への記入が不要です
         </Text>
       </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -289,6 +375,37 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+  },
+  stateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  stateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textMain,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  stateDescription: {
+    fontSize: 14,
+    color: colors.textSub,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  stateButton: {
+    marginTop: 16,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: colors.accentSoft,
+  },
+  stateButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
   },
   previewCard: {
     marginHorizontal: Platform.OS === 'web' ? 32 : 16,

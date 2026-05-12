@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
-  Animated,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Search, ChevronDown, ChevronUp } from 'lucide-react-native';

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -33,6 +32,10 @@ function RootNavigator() {
       />
       <Stack.Screen 
         name="(tabs)" 
+        redirect={!user || isFirstLaunch}
+      />
+      <Stack.Screen
+        name="admin/facility-approvals"
         redirect={!user || isFirstLaunch}
       />
       <Stack.Screen 

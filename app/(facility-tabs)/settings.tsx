@@ -12,9 +12,11 @@ import { Settings as SettingsIcon, User, Bell, Lock, HelpCircle, LogOut, Chevron
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../lib/AuthContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
 
   const handleLogout = () => {
@@ -26,9 +28,9 @@ export default function SettingsScreen() {
         {
           text: 'ログアウト',
           style: 'destructive',
-          onPress: () => {
-            // ログアウト処理
-            router.push('/facility-login' as any);
+          onPress: async () => {
+            await logout();
+            router.replace('/facility-login' as any);
           },
         },
       ]
@@ -53,13 +55,13 @@ export default function SettingsScreen() {
       items: [
         {
           icon: User,
-          label: 'プロフィール編集',
-          onPress: () => console.log('Profile edit'),
+          label: '施設情報編集',
+          onPress: () => router.push('/(facility-tabs)/facility-info' as any),
         },
         {
           icon: Lock,
           label: 'パスワード変更',
-          onPress: () => console.log('Password change'),
+          onPress: () => router.push('/settings/password' as any),
         },
       ],
     },
@@ -69,7 +71,7 @@ export default function SettingsScreen() {
         {
           icon: Bell,
           label: '通知設定',
-          onPress: () => console.log('Notification settings'),
+          onPress: () => Alert.alert('通知設定', '現在この機能は準備中です。'),
         },
       ],
     },
@@ -79,7 +81,7 @@ export default function SettingsScreen() {
         {
           icon: HelpCircle,
           label: 'ヘルプ・お問い合わせ',
-          onPress: () => console.log('Help'),
+          onPress: () => router.push('/support/faq' as any),
         },
       ],
     },
@@ -114,8 +116,8 @@ export default function SettingsScreen() {
             <User size={32} color={facilityColors.primary} />
           </View>
           <View style={styles.facilityInfo}>
-            <Text style={styles.facilityName}>さくら保育園</Text>
-            <Text style={styles.facilityEmail}>sakura@example.com</Text>
+            <Text style={styles.facilityName}>{user?.name || '施設アカウント'}</Text>
+            <Text style={styles.facilityEmail}>{user?.email || 'メール未設定'}</Text>
           </View>
         </View>
 

@@ -1,9 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
 import BottomNav from '../../components/BottomNav';
 import WebHeader from '../../components/WebHeader';
-import { colors } from '../../constants/colors';
 
 export default function TabsLayout() {
   // Custom tab bar component that uses our BottomNav
@@ -46,10 +44,3 @@ export default function TabsLayout() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-});

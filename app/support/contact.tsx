@@ -14,6 +14,8 @@ import {
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Mail, Phone, MapPin, Send, Clock } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
+import { useAuth } from '../../lib/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 const contactCategories = [
   { id: 'reservation', label: '予約に関するお問い合わせ' },
@@ -23,43 +25,124 @@ const contactCategories = [
   { id: 'other', label: 'その他のお問い合わせ' },
 ];
 
+const SUPPORT_RECIPIENT_ID = process.env.EXPO_PUBLIC_SUPPORT_USER_ID?.trim() || '';
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function mapContactError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes('row-level security')) {
+    return '送信権限の確認に失敗しました。再ログインしてもう一度お試しください。';
+  }
+
+  if (normalized.includes('invalid input syntax for type uuid')) {
+    return 'お問い合わせ送信先の設定に不備があります。管理者へお問い合わせください。';
+  }
+
+  if (normalized.includes('foreign key')) {
+    return 'お問い合わせ送信先の設定に不備があります。管理者へお問い合わせください。';
+  }
+
+  return message;
+}
+
 export default function ContactScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (!name || !email || !category || !message) {
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
+  };
+
+  const handleSubmit = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedMessage = message.trim();
+
+    if (!trimmedName || !trimmedEmail || !category || !trimmedMessage) {
       Alert.alert('入力エラー', 'すべての項目を入力してください');
       return;
     }
 
-    // メールアドレスの簡易バリデーション
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(trimmedEmail)) {
       Alert.alert('入力エラー', '有効なメールアドレスを入力してください');
       return;
     }
 
-    // 実際のアプリでは、ここでAPIにデータを送信します
-    Alert.alert(
-      '送信完了',
-      'お問い合わせを受け付けました。\n2営業日以内にご返信いたします。',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setName('');
-            setEmail('');
-            setCategory('');
-            setMessage('');
-            router.back();
+    if (!user) {
+      Alert.alert('送信エラー', 'ログイン情報を確認できませんでした。再ログイン後にお試しください。');
+      return;
+    }
+
+    if (user.id === 'demo-user') {
+      Alert.alert('送信不可', 'ゲストユーザーではお問い合わせを送信できません。');
+      return;
+    }
+
+    const selectedCategory = contactCategories.find((item) => item.id === category);
+    const categoryLabel = selectedCategory?.label || category;
+    const recipientId = isUuid(SUPPORT_RECIPIENT_ID) ? SUPPORT_RECIPIENT_ID : user.id;
+    const supportRouted = recipientId !== user.id;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          sender_type: 'parent',
+          recipient_id: recipientId,
+          subject: `【お問い合わせ】${categoryLabel}`,
+          body: [
+            `種別: ${categoryLabel}`,
+            `氏名: ${trimmedName}`,
+            `返信先メール: ${trimmedEmail}`,
+            '',
+            trimmedMessage,
+          ].join('\n'),
+        });
+
+      if (error) {
+        throw new Error(mapContactError(error.message || 'お問い合わせの送信に失敗しました。'));
+      }
+
+      Alert.alert(
+        '送信完了',
+        supportRouted
+          ? 'お問い合わせを受け付けました。\n2営業日以内にご返信いたします。'
+          : 'お問い合わせを受け付けました。\n開発環境のため、運営転送先は未設定の可能性があります。',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setName('');
+              setEmail('');
+              setCategory('');
+              setMessage('');
+              router.back();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        '送信エラー',
+        error instanceof Error
+          ? mapContactError(error.message)
+          : 'お問い合わせの送信に失敗しました。'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCall = () => {
@@ -225,9 +308,17 @@ export default function ContactScreen() {
                 お問い合わせ内容によっては、回答までに数日いただく場合がございます。
               </Text>
 
-              <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                onPress={() => {
+                  void handleSubmit();
+                }}
+                disabled={isSubmitting}
+              >
                 <Send size={20} color={colors.surface} />
-                <Text style={styles.submitButtonText}>送信する</Text>
+                <Text style={styles.submitButtonText}>
+                  {isSubmitting ? '送信中...' : '送信する'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -408,6 +499,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 8,
     gap: 8,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     fontSize: 16,

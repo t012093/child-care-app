@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
 import { pdfFieldMappings, PDFFieldMapping } from '../constants/pdfFields';
+import { AssetLike, resolveAssetUri, triggerBrowserDownload } from './downloadHelpers';
 
 export interface ApplicationData {
   facilityName: string;
@@ -20,7 +20,7 @@ export interface ApplicationData {
  * PDFテンプレートマップ
  * モバイル版では動的requireができないため、静的にマッピング
  */
-const PDF_TEMPLATES: Record<string, any> = {
+const PDF_TEMPLATES: Record<string, AssetLike> = {
   // 一時保育申込書
   'temporary_care_application': require('../assets/templates/temporary_care_application.pdf'),
 };
@@ -30,42 +30,30 @@ const PDF_TEMPLATES: Record<string, any> = {
  */
 async function loadPDFTemplate(templateName: string): Promise<ArrayBuffer | null> {
   try {
+    // まずは静的マッピングを優先して解決
+    const asset = PDF_TEMPLATES[templateName];
+    if (asset) {
+      const assetUri = resolveAssetUri(asset);
+      const response = await fetch(assetUri);
+      if (!response.ok) {
+        console.warn(`PDF template fetch failed: ${templateName} (${response.status})`);
+        return null;
+      }
+      return await response.arrayBuffer();
+    }
+
+    // 後方互換: 旧URL形式にもフォールバック
     if (Platform.OS === 'web') {
-      // Web版: publicフォルダから読み込み
       const response = await fetch(`/assets/templates/${templateName}.pdf`);
       if (!response.ok) {
         console.warn(`PDF template not found: ${templateName}`);
         return null;
       }
       return await response.arrayBuffer();
-    } else {
-      // モバイル版: 静的マッピングから取得
-      const asset = PDF_TEMPLATES[templateName];
-      if (!asset) {
-        console.warn(`PDF template not found in static mapping: ${templateName}`);
-        return null;
-      }
-
-      // Asset Moduleからファイルを読み込む
-      const assetModule = require('@react-native/assets-registry/registry');
-      const assetInfo = assetModule.getAssetByID(asset);
-
-      if (!assetInfo) {
-        return null;
-      }
-
-      const fileUri = assetInfo.uri;
-      const base64 = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return bytes.buffer;
     }
+
+    console.warn(`PDF template not found in static mapping: ${templateName}`);
+    return null;
   } catch (error) {
     console.error('PDF template loading error:', error);
     return null;
@@ -89,7 +77,7 @@ async function fillAcroFormFields(
     try {
       const field = form.getTextField(fieldName);
       field.setText(String(value));
-    } catch (error) {
+    } catch {
       console.warn(`Field not found: ${fieldName}`);
     }
   });
@@ -290,16 +278,14 @@ export async function generatePDFFromTemplate(
  */
 export async function downloadPDF(pdfBytes: Uint8Array | Blob, filename: string): Promise<void> {
   if (Platform.OS === 'web') {
-    const blob = pdfBytes instanceof Blob ? pdfBytes : new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+    const blob =
+      pdfBytes instanceof Blob
+        ? pdfBytes
+        : new Blob([Uint8Array.from(pdfBytes)], { type: 'application/pdf' });
+    triggerBrowserDownload(blob, filename);
   } else {
     // モバイル版: expo-sharing等を使用
-    console.log('Mobile PDF download not implemented yet');
+    // モバイル版PDF未実装 — Web版のみ対応
   }
 }
 

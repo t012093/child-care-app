@@ -2,12 +2,10 @@ import { Platform } from 'react-native';
 import { EmploymentCertificateData } from './excelFieldMappings';
 import employmentCertificateTemplate from '../assets/templates/employment_certificate.xlsx';
 import { renderEmploymentTemplate } from './employmentExcelCore';
+import { resolveAssetUri, triggerBrowserDownload } from './downloadHelpers';
 
 function getTemplateAssetUrl(): string {
-  if (typeof employmentCertificateTemplate !== 'string') {
-    throw new Error('Excel template URL is not available on this platform');
-  }
-  return employmentCertificateTemplate;
+  return resolveAssetUri(employmentCertificateTemplate);
 }
 
 /**
@@ -29,12 +27,7 @@ export async function downloadTemplateExcel(filename: string): Promise<void> {
     }
 
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+    triggerBrowserDownload(blob, filename);
   } catch (error) {
     console.error('Template download failed:', error);
     throw error;
@@ -69,14 +62,9 @@ export async function downloadExcel(buffer: ArrayBuffer, filename: string): Prom
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+    triggerBrowserDownload(blob, filename);
   } else {
-    console.log('Mobile Excel download not implemented yet');
+    // モバイル版Excel未実装 — Web版のみ対応
   }
 }
 

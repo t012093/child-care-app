@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,36 +8,56 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import Footer from '../../components/Footer';
 import { colors } from '../../constants/colors';
+import { useAuth } from '../../lib/AuthContext';
+import {
+  ApplicationFormData,
+  createApplicationDraft,
+} from '../../lib/applicationService';
 
 export default function NewApplicationScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // フォームデータ
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ApplicationFormData>({
     // 基本情報
     facilityName: '',
-    applicationType: '入園申請' as '入園申請' | '一時預かり申請' | 'その他',
+    applicationType: '入園申請',
     // 保護者情報
-    parentName: '花田 さゆり',
-    parentPhone: '090-1234-5678',
-    parentEmail: 'sayuri.hanada@example.com',
+    parentName: '',
+    parentPhone: '',
+    parentEmail: '',
     address: '',
     // 子供情報
     childName: '',
     childBirthDate: '',
-    childGender: '男' as '男' | '女',
+    childGender: '男',
     // その他
     desiredStartDate: '',
     notes: '',
   });
 
-  const updateFormData = (key: string, value: string) => {
+  useEffect(() => {
+    if (!user || user.id === 'demo-user') return;
+
+    setFormData((prev) => ({
+      ...prev,
+      parentName: prev.parentName || user.name || '',
+      parentPhone: prev.parentPhone || user.parentInfo?.phone || '',
+      parentEmail: prev.parentEmail || user.email || '',
+      address: prev.address || user.parentInfo?.address || '',
+    }));
+  }, [user]);
+
+  const updateFormData = (key: keyof ApplicationFormData, value: string) => {
     setFormData({ ...formData, [key]: value });
   };
 
@@ -53,9 +73,58 @@ export default function NewApplicationScreen() {
     }
   };
 
-  const handleSubmit = () => {
-    // PDF生成してプレビューへ
-    router.push('/application/preview/new');
+  const handleSubmit = async () => {
+    if (!user) {
+      Alert.alert('保存エラー', 'ログイン情報を確認できません。再ログインしてください。');
+      return;
+    }
+
+    if (user.id === 'demo-user') {
+      Alert.alert('保存不可', 'ゲストユーザーでは申請書を保存できません。');
+      return;
+    }
+
+    const requiredFields: [keyof ApplicationFormData, string][] = [
+      ['facilityName', '施設名'],
+      ['desiredStartDate', '希望開始日'],
+      ['parentName', '保護者氏名'],
+      ['address', '住所'],
+      ['childName', 'お子様の氏名'],
+      ['childBirthDate', 'お子様の生年月日'],
+    ];
+
+    const missingField = requiredFields.find(([key]) => !formData[key].trim());
+    if (missingField) {
+      Alert.alert('入力エラー', `${missingField[1]}を入力してください。`);
+      return;
+    }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(formData.desiredStartDate.trim())) {
+      Alert.alert('入力エラー', '希望開始日は YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+
+    if (!dateRegex.test(formData.childBirthDate.trim())) {
+      Alert.alert('入力エラー', 'お子様の生年月日は YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const savedApplication = await createApplicationDraft({
+        user,
+        formData,
+      });
+      router.replace(`/application/preview/${savedApplication.id}`);
+    } catch (error) {
+      Alert.alert(
+        '保存エラー',
+        error instanceof Error ? error.message : '申請書の保存に失敗しました。'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStepIndicator = () => (
@@ -272,17 +341,28 @@ export default function NewApplicationScreen() {
 
       <View style={styles.buttonContainer}>
         {currentStep > 1 && (
-          <TouchableOpacity style={styles.secondaryButton} onPress={handlePrevious}>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={handlePrevious}
+            disabled={isSubmitting}
+          >
             <Text style={styles.secondaryButtonText}>戻る</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity
-          style={[styles.primaryButton, currentStep === 1 && styles.primaryButtonFull]}
+          style={[
+            styles.primaryButton,
+            currentStep === 1 && styles.primaryButtonFull,
+            isSubmitting && styles.primaryButtonDisabled,
+          ]}
           onPress={currentStep === 3 ? handleSubmit : handleNext}
+          disabled={isSubmitting}
         >
           <Text style={styles.primaryButtonText}>
-            {currentStep === 3 ? 'プレビュー' : '次へ'}
+            {currentStep === 3
+              ? (isSubmitting ? '保存中...' : '保存してプレビュー')
+              : '次へ'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -454,6 +534,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: 'white',
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   secondaryButton: {
     flex: 1,

@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Building2, Mail, Lock, ArrowLeft } from 'lucide-react-native';
 import { facilityColors } from '@/constants/colors';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth, DEMO_ENABLED } from '@/lib/AuthContext';
 import { fetchFacilityIdsForStaffUser } from '@/lib/reservationService';
 import { supabase } from '@/lib/supabase';
 
@@ -297,13 +297,15 @@ export default function FacilityLoginScreen() {
                 <Text style={styles.registerButtonText}>新規施設登録</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.guestButton}
-                onPress={handleGuestLogin}
-                disabled={isLoading}
-              >
-                <Text style={styles.guestButtonText}>ゲストとしてログイン（開発用）</Text>
-              </TouchableOpacity>
+              {DEMO_ENABLED && (
+                <TouchableOpacity
+                  style={styles.guestButton}
+                  onPress={handleGuestLogin}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.guestButtonText}>ゲストとしてログイン（開発用）</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Footer */}

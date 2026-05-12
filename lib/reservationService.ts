@@ -1,4 +1,4 @@
-import { Facility, sampleFacilities } from '@/constants/facilities';
+import { Facility } from '@/constants/facilities';
 import { User } from '@/lib/AuthContext';
 import { getPersistedFacilityDistrict } from '@/lib/facilityDistrict';
 import { supabase } from '@/lib/supabase';
@@ -226,6 +226,7 @@ async function ensureFacilityRecord(facility: Facility) {
       age_range: facility.ageRange || null,
       has_lunch: facility.hasLunch || false,
       provider: facility.provider || null,
+      status: 'pending_approval',
     })
     .select()
     .single();
@@ -351,20 +352,38 @@ export async function fetchFacilityIdsForStaffUser(userId: string) {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from('facility_staff')
-    .select('facility_id')
-    .eq('user_id', userId);
+  const [staffResponse, ownerResponse] = await Promise.all([
+    supabase
+      .from('facility_staff')
+      .select('facility_id, status')
+      .eq('user_id', userId),
+    supabase
+      .from('facilities')
+      .select('id')
+      .eq('owner_user_id', userId),
+  ]);
 
-  if (error) {
-    throw new Error(error.message || '施設所属情報の取得に失敗しました');
+  if (staffResponse.error) {
+    throw new Error(staffResponse.error.message || '施設所属情報の取得に失敗しました');
   }
 
-  const facilityIds = ((data as { facility_id?: string | null }[] | null) || [])
-    .map((row) => row.facility_id)
-    .filter((value): value is string => Boolean(value) && isUuid(value));
+  if (ownerResponse.error) {
+    throw new Error(ownerResponse.error.message || '施設オーナー情報の取得に失敗しました');
+  }
 
-  return Array.from(new Set(facilityIds));
+  const staffFacilityIds = ((staffResponse.data as {
+    facility_id?: string | null;
+    status?: string | null;
+  }[] | null) || [])
+    .filter((row) => (row.status || 'active') !== 'inactive')
+    .map((row) => row.facility_id)
+    .filter((value): value is string => typeof value === 'string' && isUuid(value));
+
+  const ownerFacilityIds = ((ownerResponse.data as { id?: string | null }[] | null) || [])
+    .map((row) => row.id)
+    .filter((value): value is string => typeof value === 'string' && isUuid(value));
+
+  return Array.from(new Set([...staffFacilityIds, ...ownerFacilityIds]));
 }
 
 export async function fetchReservationsByFacilityIds(facilityIds: string[]) {
@@ -448,9 +467,4 @@ export async function markReservationCheckedOut(id: string) {
   return updateReservationStatusRecord(id, 'completed', {
     check_out_time: new Date().toISOString(),
   });
-}
-
-export function getFacilityByRouteId(id?: string | string[]) {
-  if (!id || Array.isArray(id)) return null;
-  return sampleFacilities.find((facility) => facility.id === id) || null;
 }

@@ -35,8 +35,8 @@ export default function MonthCalendar({
       return acc;
     }, {} as Record<string, number>);
 
-    const weeks: Array<Array<{ date: string; count: number; isOtherMonth: boolean }>> = [];
-    let currentWeek: Array<{ date: string; count: number; isOtherMonth: boolean }> = [];
+    const weeks: { date: string; count: number; isOtherMonth: boolean }[][] = [];
+    let currentWeek: { date: string; count: number; isOtherMonth: boolean }[] = [];
 
     // 前月の日付で埋める
     const prevMonthLastDay = new Date(year, month - 1, 0).getDate();

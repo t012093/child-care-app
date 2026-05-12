@@ -1,33 +1,111 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Plus, Settings, Briefcase } from 'lucide-react-native';
 import ApplicationCard, { Application } from '../../components/ApplicationCard';
 import Footer from '../../components/Footer';
 import { colors } from '../../constants/colors';
+import { useAuth } from '../../lib/AuthContext';
+import { fetchParentApplications } from '../../lib/applicationService';
 
 export default function ApplicationListScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // サンプルデータ
-  const [applications] = useState<Application[]>([
-    {
-      id: '1',
-      facilityName: 'さくら保育園',
-      applicationType: '入園申請',
-      status: 'draft',
-      createdAt: '2025-10-01',
-      childName: '花田 はな',
-    },
-    {
-      id: '2',
-      facilityName: 'ひまわり保育園',
-      applicationType: '一時預かり申請',
-      status: 'submitted',
-      createdAt: '2025-09-28',
-      childName: '花田 さくら',
-    },
-  ]);
+  const isGuestUser = !user || user.id === 'demo-user';
+
+  const loadApplications = useCallback(async () => {
+    if (!user || user.id === 'demo-user') {
+      setApplications([]);
+      setLoadError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const savedApplications = await fetchParentApplications(user.id);
+      setApplications(savedApplications);
+    } catch (error) {
+      setApplications([]);
+      setLoadError(
+        error instanceof Error ? error.message : '申請書一覧の取得に失敗しました。'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadApplications();
+    }, [loadApplications])
+  );
+
+  const renderApplicationSection = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>申請書を読み込み中です</Text>
+        </View>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>申請書一覧の取得に失敗しました</Text>
+          <Text style={styles.emptySubtext}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => void loadApplications()}>
+            <Text style={styles.retryButtonText}>再読み込み</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (isGuestUser) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>申請書はログイン後に利用できます</Text>
+          <Text style={styles.emptySubtext}>実アカウントでログインしてください</Text>
+        </View>
+      );
+    }
+
+    if (applications.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>申請書がありません</Text>
+          <Text style={styles.emptySubtext}>
+            下のボタンから新しい申請書を作成してください
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>申請書一覧</Text>
+          <Text style={styles.sectionCount}>{applications.length}件</Text>
+        </View>
+
+        {applications.map((application) => (
+          <ApplicationCard
+            key={application.id}
+            application={application}
+            onPress={() => router.push(`/application/preview/${application.id}`)}
+          />
+        ))}
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,29 +144,7 @@ export default function ApplicationListScreen() {
           </Text>
         </View>
 
-        {applications.length > 0 ? (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>申請書一覧</Text>
-              <Text style={styles.sectionCount}>{applications.length}件</Text>
-            </View>
-
-            {applications.map((application) => (
-              <ApplicationCard
-                key={application.id}
-                application={application}
-                onPress={() => router.push(`/application/preview/${application.id}`)}
-              />
-            ))}
-          </>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>申請書がありません</Text>
-            <Text style={styles.emptySubtext}>
-              下のボタンから新しい申請書を作成してください
-            </Text>
-          </View>
-        )}
+        {renderApplicationSection()}
 
         <Footer />
       </ScrollView>
@@ -231,6 +287,18 @@ const styles = StyleSheet.create({
     color: colors.textSub,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  retryButton: {
+    marginTop: 16,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: colors.accentSoft,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
   },
   footer: {
     height: 100,

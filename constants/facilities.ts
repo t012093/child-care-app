@@ -25,6 +25,7 @@ export interface Facility {
   hasLunch?: boolean; // 給食提供
   provider?: string; // 設置者名
   pdfTemplateUrl?: any; // 施設申込書PDFテンプレート（Metro asset）
+  createdAt?: string;
 }
 
 // 札幌市一時保育施設（実データ）

@@ -1,169 +1,61 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ChevronLeft, Calendar, Heart, Activity, User, Camera, Edit3, Shield, Baby, Thermometer, Smile } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft, Calendar, Heart, Edit3, Baby } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
-import { useAuth } from '../../lib/AuthContext';
+import { User, useAuth } from '../../lib/AuthContext';
+import { ChildProfile, fetchChildById } from '../../lib/childService';
 
-interface ChildData {
-  id: string;
-  name: string;
-  ageMonths: number;
-  imageUrl: string;
-  birthDate?: string;
-  medicalInfo?: string;
-  dailyLife?: {
-    eating: string;
-    weaning: string;
-    nursing: string;
-    toilet: string;
-  };
-  vaccines?: {
-    progress: number;
-    total: number;
-  };
-  allergies: string[];
-  sleep?: {
-    wakeUp: string;
-    nap: string;
-    bedtime: string;
-  };
-  sizes?: {
-    diaper: string;
-    clothes: string;
-  };
-  preferences?: {
-    likes: string[];
-    dislikes: string[];
-    comfortItems?: string;
-    sleepRoutine?: string;
-    dietaryRestrictions?: string;
-  };
-  development?: {
-    milestones: {
-      title: string;
-      achieved: boolean;
-    }[];
-  };
-  health?: {
-    currentTemperature?: string;
-    lastCheckDate?: string;
-  };
+const FALLBACK_CHILD_IMAGE =
+  'https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=600';
+
+function calculateAgeMonths(birthday: string) {
+  const birth = new Date(birthday);
+  if (Number.isNaN(birth.getTime())) {
+    return 0;
+  }
+
+  const today = new Date();
+  return Math.max(
+    0,
+    (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth())
+  );
 }
 
-// Mock data - In a real app, this would come from your backend
-const mockChildren: Record<string, ChildData> = {
-  "1": {
-    id: "1",
-    name: "花田 はな",
-    ageMonths: 25,
-    birthDate: "2022/05/15",
-    imageUrl: "https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=600",
-    dailyLife: {
-      eating: "スプーン (一部介助)",
-      weaning: "カミカミ期",
-      nursing: "卒乳済み",
-      toilet: "オムツ",
-    },
-    vaccines: {
-      progress: 8,
-      total: 10,
-    },
-    allergies: ["卵", "牛乳"],
-    sleep: {
-      wakeUp: "7:00",
-      nap: "13:00-15:00",
-      bedtime: "20:00",
-    },
-    sizes: {
-      diaper: "M",
-      clothes: "90cm",
-    },
-    preferences: {
-      likes: ["お絵かき", "ブロック遊び"],
-      dislikes: ["大きな音", "暗い場所"],
-      comfortItems: "お気に入りのぬいぐるみ",
-      sleepRoutine: "絵本を読んでから寝る",
-      dietaryRestrictions: "なし",
-    },
-    development: {
-      milestones: [
-        { title: "2語文を話す", achieved: true },
-        { title: "階段を上る", achieved: true },
-        { title: "スプーンで食べる", achieved: true },
-        { title: "簡単な指示に従う", achieved: true },
-      ],
-    },
-    health: {
-      currentTemperature: "36.5℃",
-      lastCheckDate: "2025-10-03",
-    },
-  },
-  "2": {
-    id: "2",
-    name: "花田 さくら",
-    ageMonths: 36,
-    birthDate: "2021/04/10",
-    imageUrl: "https://images.pexels.com/photos/1912868/pexels-photo-1912868.jpeg?auto=compress&cs=tinysrgb&w=600",
-    dailyLife: {
-      eating: "箸 (自立)",
-      weaning: "完了",
-      nursing: "卒乳済み",
-      toilet: "トイレ",
-    },
-    vaccines: {
-      progress: 10,
-      total: 10,
-    },
-    allergies: [],
-    sleep: {
-      wakeUp: "6:30",
-      nap: "13:30-15:00",
-      bedtime: "20:30",
-    },
-    sizes: {
-      diaper: "パンツ",
-      clothes: "95cm",
-    },
-    preferences: {
-      likes: ["歌", "ダンス", "お絵かき"],
-      dislikes: ["虫"],
-      comfortItems: "タオルケット",
-      sleepRoutine: "音楽を聴きながら寝る",
-      dietaryRestrictions: "なし",
-    },
-    development: {
-      milestones: [
-        { title: "3語以上の文を話す", achieved: true },
-        { title: "片足で立つ", achieved: true },
-        { title: "自分で着替える", achieved: true },
-        { title: "トイレを使う", achieved: true },
-      ],
-    },
-    health: {
-      currentTemperature: "36.8℃",
-      lastCheckDate: "2025-10-04",
-    },
-  },
-};
+function mapDemoChild(child: NonNullable<User['children']>[number]) {
+  return {
+    id: child.id,
+    userId: 'demo-user',
+    name: child.name,
+    birthday: child.birthDate,
+    allergies: child.allergies || [],
+    medicalInfo: child.medicalInfo,
+    photoUrl: child.photo,
+  } as ChildProfile;
+}
 
 function InfoCard({
   title,
-  icon,
   children,
-  onEdit
+  onEdit,
 }: {
   title: string;
-  icon?: React.ReactNode;
   children: React.ReactNode;
   onEdit?: () => void;
 }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <View style={styles.cardTitleContainer}>
-          {icon}
-          <Text style={styles.cardTitle}>{title}</Text>
-        </View>
+        <Text style={styles.cardTitle}>{title}</Text>
         {onEdit && (
           <TouchableOpacity style={styles.cardEditButton} onPress={onEdit}>
             <Edit3 size={16} color={colors.accent} />
@@ -176,33 +68,113 @@ function InfoCard({
 }
 
 export default function ChildProfileScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const childId = Array.isArray(id) ? id[0] : id;
+
   const router = useRouter();
   const { user } = useAuth();
 
-  const userChild = user?.children?.find(c => c.id === id);
-  const mockChild = mockChildren[id as string];
+  const [child, setChild] = useState<ChildProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const child = userChild ? {
-    ...mockChild,
-    ...userChild,
-    imageUrl: userChild.photo || mockChild?.imageUrl || "https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=600",
-    ageMonths: (() => {
-      const birth = new Date(userChild.birthDate);
-      const today = new Date();
-      return (today.getFullYear() - birth.getFullYear()) * 12 +
-             (today.getMonth() - birth.getMonth());
-    })(),
-  } : mockChild;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadChild = async () => {
+      if (!childId) {
+        if (!isMounted) return;
+        setChild(null);
+        setLoadError('お子様IDが指定されていません。');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!user) {
+        if (!isMounted) return;
+        setChild(null);
+        setLoadError('ログイン情報を確認できません。');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        if (user.id === 'demo-user') {
+          const demoChild = user.children?.find((item) => item.id === childId);
+          if (!isMounted) return;
+
+          if (!demoChild) {
+            setChild(null);
+            setLoadError('お子様が見つかりませんでした。');
+            setIsLoading(false);
+            return;
+          }
+
+          setChild(mapDemoChild(demoChild));
+          setIsLoading(false);
+          return;
+        }
+
+        const fetched = await fetchChildById(childId, user.id);
+        if (!isMounted) return;
+
+        if (!fetched) {
+          setChild(null);
+          setLoadError('お子様が見つかりませんでした。');
+          setIsLoading(false);
+          return;
+        }
+
+        setChild(fetched);
+      } catch (error) {
+        if (!isMounted) return;
+        setChild(null);
+        setLoadError(
+          error instanceof Error ? error.message : 'お子様情報の取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadChild();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [childId, user]);
+
+  const ageMonths = useMemo(() => {
+    if (!child) return 0;
+    return calculateAgeMonths(child.birthday);
+  }, [child]);
+
+  const canEdit = !!childId && !!user && user.id !== 'demo-user';
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={styles.stateText}>お子様情報を読み込んでいます...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!child) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.notFoundContainer}>
+        <View style={styles.centerState}>
           <Baby size={64} color={colors.textSub} />
-          <Text style={styles.errorText}>お子様が見つかりませんでした</Text>
-          <TouchableOpacity style={styles.backToProfileButton} onPress={() => router.back()}>
-            <Text style={styles.backToProfileText}>プロフィールに戻る</Text>
+          <Text style={styles.errorText}>{loadError || 'お子様が見つかりませんでした。'}</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>戻る</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -223,248 +195,81 @@ export default function ChildProfileScreen() {
         }}
       />
       <SafeAreaView style={styles.container}>
-        <ScrollView>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={{ uri: child.imageUrl }}
-                style={styles.avatar}
-              />
-              <TouchableOpacity style={styles.cameraButton}>
-                <Camera size={16} color={colors.surface} />
-              </TouchableOpacity>
-            </View>
+            <Image source={{ uri: child.photoUrl || FALLBACK_CHILD_IMAGE }} style={styles.avatar} />
+
             <View style={styles.profileInfo}>
               <View style={styles.nameSection}>
                 <Text style={styles.childName}>{child.name}</Text>
-                <TouchableOpacity style={styles.editButton}>
-                  <Edit3 size={16} color={colors.accent} />
-                </TouchableOpacity>
+                {canEdit && (
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => router.push(`/child/edit/${child.id}`)}
+                  >
+                    <Edit3 size={16} color={colors.accent} />
+                  </TouchableOpacity>
+                )}
               </View>
+
               <View style={styles.ageSection}>
                 <Calendar size={16} color={colors.textSub} />
                 <Text style={styles.childAge}>
-                  {Math.floor(child.ageMonths / 12)}歳{child.ageMonths % 12}ヶ月
+                  {Math.floor(ageMonths / 12)}歳{ageMonths % 12}ヶ月
                 </Text>
               </View>
-              {child.birthDate && (
-                <Text style={styles.birthDate}>
-                  {new Date(child.birthDate).toLocaleDateString('ja-JP', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}生まれ
-                </Text>
-              )}
+
+              <Text style={styles.birthDate}>
+                {new Date(child.birthday).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                生まれ
+              </Text>
             </View>
           </View>
 
-          <View style={styles.section}>
-            <InfoCard
-              title="日常生活"
-              icon={<Activity size={20} color={colors.accent} />}
-              onEdit={() => console.log('Edit daily life')}
-            >
-              {child.dailyLife ? (
-                <>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>食事</Text>
-                    <Text style={styles.infoValue}>{child.dailyLife.eating}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>離乳食</Text>
-                    <Text style={styles.infoValue}>{child.dailyLife.weaning}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>授乳</Text>
-                    <Text style={styles.infoValue}>{child.dailyLife.nursing}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>排泄</Text>
-                    <Text style={styles.infoValue}>{child.dailyLife.toilet}</Text>
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.noDataText}>情報が登録されていません</Text>
-              )}
-            </InfoCard>
-
-            <InfoCard
-              title="予防接種"
-              icon={<Shield size={20} color={colors.accent} />}
-              onEdit={() => console.log('Edit vaccines')}
-            >
-              {child.vaccines ? (
-                <>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        { width: `${(child.vaccines.progress / child.vaccines.total) * 100}%` }
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.progressText}>
-                    {child.vaccines.progress}/{child.vaccines.total} 完了
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.noDataText}>予防接種記録がありません</Text>
-              )}
-            </InfoCard>
-
-            <InfoCard
-              title="アレルギー・医療情報"
-              icon={<Heart size={20} color={colors.accent} />}
-              onEdit={() => console.log('Edit allergies')}
-            >
-              <View style={styles.allergySection}>
-                <Text style={styles.sectionSubtitle}>アレルギー</Text>
-                <View style={styles.tagContainer}>
-                  {child.allergies && child.allergies.length > 0 ? (
-                    child.allergies.map((allergy, index) => (
-                      <View key={index} style={styles.tag}>
-                        <Text style={styles.tagText}>{allergy}</Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.noDataText}>アレルギーなし</Text>
-                  )}
-                </View>
+          <InfoCard
+            title="アレルギー・医療情報"
+            onEdit={
+              canEdit
+                ? () => {
+                    router.push(`/child/edit/${child.id}`);
+                  }
+                : undefined
+            }
+          >
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionTitleRow}>
+                <Heart size={16} color={colors.accent} />
+                <Text style={styles.sectionTitle}>アレルギー</Text>
               </View>
-              {child.medicalInfo && (
-                <View style={styles.medicalSection}>
-                  <Text style={styles.sectionSubtitle}>医療情報</Text>
-                  <Text style={styles.medicalText}>{child.medicalInfo}</Text>
-                </View>
-              )}
-            </InfoCard>
 
-            {child.sleep && (
-              <InfoCard
-                title="睡眠リズム"
-                icon={<User size={20} color={colors.accent} />}
-                onEdit={() => console.log('Edit sleep')}
-              >
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>起床</Text>
-                  <Text style={styles.infoValue}>{child.sleep.wakeUp}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>昼寝</Text>
-                  <Text style={styles.infoValue}>{child.sleep.nap}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>就寝</Text>
-                  <Text style={styles.infoValue}>{child.sleep.bedtime}</Text>
-                </View>
-              </InfoCard>
-            )}
-
-            {child.sizes && (
-              <InfoCard
-                title="サイズ情報"
-                icon={<Baby size={20} color={colors.accent} />}
-                onEdit={() => console.log('Edit sizes')}
-              >
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>オムツ</Text>
-                  <Text style={styles.infoValue}>{child.sizes.diaper}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>服</Text>
-                  <Text style={styles.infoValue}>{child.sizes.clothes}</Text>
-                </View>
-              </InfoCard>
-            )}
-
-            {child.health && (
-              <InfoCard
-                title="健康・検温"
-                icon={<Thermometer size={20} color={colors.accent} />}
-                onEdit={() => console.log('Edit health')}
-              >
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>体温</Text>
-                  <Text style={styles.infoValue}>{child.health.currentTemperature}</Text>
-                </View>
-                {child.health.lastCheckDate && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>測定日</Text>
-                    <Text style={styles.infoValue}>
-                      {new Date(child.health.lastCheckDate).toLocaleDateString('ja-JP')}
-                    </Text>
-                  </View>
-                )}
-              </InfoCard>
-            )}
-
-            {child.preferences && (
-              <InfoCard
-                title="嗜好・ケア"
-                icon={<Smile size={20} color={colors.accent} />}
-                onEdit={() => console.log('Edit preferences')}
-              >
-                <View style={styles.preferenceSection}>
-                  <Text style={styles.sectionSubtitle}>好きなこと</Text>
-                  <View style={styles.tagContainer}>
-                    {child.preferences.likes.map((like, index) => (
-                      <View key={index} style={[styles.tag, styles.likeTag]}>
-                        <Text style={[styles.tagText, styles.likeTagText]}>{like}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.preferenceSection}>
-                  <Text style={styles.sectionSubtitle}>苦手なこと</Text>
-                  <View style={styles.tagContainer}>
-                    {child.preferences.dislikes.map((dislike, index) => (
-                      <View key={index} style={[styles.tag, styles.dislikeTag]}>
-                        <Text style={[styles.tagText, styles.dislikeText]}>{dislike}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                {child.preferences.comfortItems && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>落ち着くアイテム</Text>
-                    <Text style={styles.infoValue}>{child.preferences.comfortItems}</Text>
-                  </View>
-                )}
-                {child.preferences.sleepRoutine && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>入眠ルーティン</Text>
-                    <Text style={styles.infoValue}>{child.preferences.sleepRoutine}</Text>
-                  </View>
-                )}
-                {child.preferences.dietaryRestrictions && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>食事制限</Text>
-                    <Text style={styles.infoValue}>{child.preferences.dietaryRestrictions}</Text>
-                  </View>
-                )}
-              </InfoCard>
-            )}
-
-            {child.development && (
-              <InfoCard
-                title="発達マイルストーン"
-                icon={<Activity size={20} color={colors.accent} />}
-                onEdit={() => console.log('Edit development')}
-              >
-                {child.development.milestones.map((milestone, index) => (
-                  <View key={index} style={styles.milestone}>
-                    <Text style={styles.milestoneText}>{milestone.title}</Text>
-                    <View style={[styles.checkmark, milestone.achieved && styles.checkmarkActive]}>
-                      {milestone.achieved && (
-                        <Text style={styles.checkmarkIcon}>✓</Text>
-                      )}
+              {child.allergies.length > 0 ? (
+                <View style={styles.tagContainer}>
+                  {child.allergies.map((allergy) => (
+                    <View key={allergy} style={styles.tag}>
+                      <Text style={styles.tagText}>{allergy}</Text>
                     </View>
-                  </View>
-                ))}
-              </InfoCard>
-            )}
-          </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.noDataText}>登録されていません</Text>
+              )}
+            </View>
+
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>医療メモ</Text>
+              <Text style={styles.medicalText}>{child.medicalInfo || '登録されていません'}</Text>
+            </View>
+          </InfoCard>
+
+          <InfoCard title="データ連携状況">
+            <Text style={styles.noDataText}>
+              現在は「名前・生年月日・アレルギー・医療メモ」を実データで管理しています。
+            </Text>
+          </InfoCard>
         </ScrollView>
       </SafeAreaView>
     </>
@@ -476,11 +281,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  centerState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  stateText: {
+    fontSize: 14,
+    color: colors.textSub,
+  },
   errorText: {
     fontSize: 16,
     color: colors.error,
     textAlign: 'center',
-    marginTop: 24,
+  },
+  backButton: {
+    marginTop: 8,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  backButtonText: {
+    color: colors.surface,
+    fontWeight: '700',
   },
   profileSection: {
     padding: 20,
@@ -490,14 +319,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginHorizontal: 16,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  avatarContainer: {
-    position: 'relative',
   },
   avatar: {
     width: 80,
@@ -505,19 +326,6 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 3,
     borderColor: colors.accentSoft,
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: colors.accent,
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.surface,
   },
   profileInfo: {
     marginLeft: 16,
@@ -556,20 +364,12 @@ const styles = StyleSheet.create({
     color: colors.textSub,
     marginTop: 2,
   },
-  section: {
-    paddingVertical: 8,
-  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 16,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -577,52 +377,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  cardTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textMain,
-    marginLeft: 8,
   },
   cardEditButton: {
     padding: 8,
     borderRadius: 8,
     backgroundColor: colors.accentSoft,
   },
-  infoRow: {
+  sectionBlock: {
+    marginBottom: 16,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    width: 80,
-    fontSize: 14,
-    color: colors.textSub,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textMain,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+    gap: 6,
     marginBottom: 8,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.accent,
-    borderRadius: 4,
-  },
-  progressText: {
+  sectionTitle: {
     fontSize: 14,
+    fontWeight: '600',
+    color: colors.textMain,
+  },
+  noDataText: {
     color: colors.textSub,
-    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 20,
   },
   tagContainer: {
     flexDirection: 'row',
@@ -632,101 +414,17 @@ const styles = StyleSheet.create({
   tag: {
     backgroundColor: colors.accentSoft,
     paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    borderRadius: 999,
   },
   tagText: {
     color: colors.accent,
-    fontSize: 14,
-  },
-  noDataText: {
-    color: colors.textSub,
-    fontSize: 14,
-  },
-  milestone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  milestoneText: {
-    fontSize: 14,
-    color: colors.textMain,
-  },
-  checkmark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  checkmarkActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  checkmarkIcon: {
-    color: colors.surface,
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  notFoundContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  backToProfileButton: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  backToProfileText: {
-    color: colors.surface,
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textMain,
-    marginBottom: 8,
-  },
-  allergySection: {
-    marginBottom: 16,
-  },
-  medicalSection: {
-    marginTop: 8,
   },
   medicalText: {
     fontSize: 14,
     color: colors.textMain,
     lineHeight: 20,
-    backgroundColor: colors.background,
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
-  },
-  preferenceSection: {
-    marginBottom: 16,
-  },
-  likeTag: {
-    backgroundColor: '#E8F5E8',
-    borderColor: '#4CAF50',
-    borderWidth: 1,
-  },
-  likeTagText: {
-    color: '#4CAF50',
-  },
-  dislikeTag: {
-    backgroundColor: '#FFF3E0',
-    borderColor: '#FF9800',
-    borderWidth: 1,
-  },
-  dislikeText: {
-    color: '#FF9800',
   },
 });

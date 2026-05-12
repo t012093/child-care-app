@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth, DEMO_ENABLED } from '@/lib/AuthContext';
 import { colors } from '@/constants/colors';
 import { Baby, Mail, Lock, UserPlus } from 'lucide-react-native';
 
@@ -177,20 +177,24 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>または</Text>
-                <View style={styles.dividerLine} />
-              </View>
+              {DEMO_ENABLED && (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>または</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
 
-              <TouchableOpacity 
-                style={styles.guestButton}
-                onPress={handleGuestLogin}
-                disabled={isLoading}
-              >
-                <UserPlus size={20} color={colors.accent} />
-                <Text style={styles.guestButtonText}>ゲストとして利用</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.guestButton}
+                    onPress={handleGuestLogin}
+                    disabled={isLoading}
+                  >
+                    <UserPlus size={20} color={colors.accent} />
+                    <Text style={styles.guestButtonText}>ゲストとして利用</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
 
             {/* Footer */}

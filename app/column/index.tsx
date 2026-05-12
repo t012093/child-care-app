@@ -15,26 +15,32 @@ import {
 import { Search, ChevronLeft } from 'lucide-react-native';
 import { columnColors } from '../../constants/colors';
 import { useRouter, Stack } from 'expo-router';
-import { mockArticles, categoryColors, type ArticleCategory } from '../../constants/columnData';
+import { categoryColors, type Article, type ArticleCategory } from '../../constants/columnData';
+import { fetchArticles } from '../../lib/articleService';
 import Footer from '../../components/Footer';
 
 export default function ColumnListScreen() {
   const router = useRouter();
+  const [articles, setArticles] = useState<Article[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ArticleCategory | 'all'>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [displayedCount, setDisplayedCount] = useState(6);
 
+  useEffect(() => {
+    fetchArticles().then(setArticles).catch(() => {});
+  }, []);
+
   // 全タグを取得
   const allTags = Array.from(
-    new Set(mockArticles.flatMap((article) => article.tags || []))
+    new Set(articles.flatMap((article) => article.tags || []))
   );
 
   // 人気のカテゴリー（サンプルデザインに合わせて）
   const popularCategories: ArticleCategory[] = ['parenting', 'education', 'nutrition', 'health'];
 
   // フィルタリング
-  const filteredArticles = mockArticles.filter((article) => {
+  const filteredArticles = articles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
@@ -80,7 +86,7 @@ export default function ColumnListScreen() {
           useNativeDriver: true,
         }),
       ]).start();
-    }, []);
+    }, [delay, fadeAnim, translateY]);
 
     return (
       <Animated.View

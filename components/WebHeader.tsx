@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
@@ -16,7 +16,6 @@ export default function WebHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { isTablet } = useResponsive();
-  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
 
   // モバイルでは表示しない
   if (!isTablet) {

@@ -70,11 +70,9 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     try {
-      console.log('Logout button pressed');
       await logout();
-      console.log('Logout successful');
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
+      // logout error is non-critical
     }
   };
   

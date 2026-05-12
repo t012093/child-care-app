@@ -164,7 +164,7 @@ npm run ios
 - **lat, lng**: 札幌市中央区の中心座標（43.064, 141.346）
   - ⚠️ 将来的にGoogle Maps APIで正確な座標を取得予定
 - **status**: `pending_approval`（承認待ち）
-  - ⚠️ 管理者による承認機能は未実装
+  - 管理者向け「施設承認管理」画面から `active` / `inactive` へ更新できます
 - **rating**: 0（評価なし）
 - **images**: 空配列
 - **stock**: 0
@@ -177,8 +177,8 @@ npm run ios
   3. 「Confirm email」をクリック
 
 ### 3. 施設ステータス
-現在、施設は`pending_approval`で登録されますが、承認フローは未実装です。
-開発環境では、以下の方法で手動で`active`にできます:
+施設は`pending_approval`で登録され、管理者による審査後に `active`（承認）または `inactive`（却下）へ更新されます。
+管理画面が利用できない場合のみ、以下のSQLで手動更新できます:
 
 ```sql
 -- Supabase Dashboard > SQL Editor
@@ -186,6 +186,17 @@ UPDATE facilities
 SET status = 'active'
 WHERE email = 'facility@example.com';
 ```
+
+### 4. 承認管理画面のセットアップ（Edge Function）
+承認/却下操作は `moderate-facility` Edge Function を経由して実行します。  
+初回セットアップ時に以下を実行してください。
+
+```bash
+supabase functions deploy moderate-facility
+supabase secrets set FACILITY_APPROVAL_ADMIN_USER_ID="<管理者ユーザーUUID>"
+```
+
+クライアント側では、`.env.local` の `EXPO_PUBLIC_SUPPORT_USER_ID` と同じ UUID を設定します。
 
 ---
 
@@ -220,6 +231,9 @@ npm install @react-native-picker/picker
 ### ファイル構成
 ```
 app/facility-register.tsx  # 施設登録画面
+app/admin/facility-approvals.tsx  # 承認待ち一覧・承認/却下画面
+lib/facilityApprovalService.ts  # 承認管理サービス
+supabase/functions/moderate-facility/index.ts  # 承認更新 Edge Function
 lib/supabase.ts            # Supabaseクライアント・型定義
 ```
 
@@ -265,9 +279,9 @@ ALTER TABLE facilities ADD CONSTRAINT facilities_type_check
 - [ ] 施設画像のアップロード
 
 ### Phase 4: 承認フロー（優先度: 中）
-- [ ] 管理者ダッシュボード
-- [ ] 承認・却下機能
-- [ ] 承認状況の通知
+- [x] 管理者ダッシュボード（施設承認管理）
+- [x] 承認・却下機能
+- [ ] 承認状況の通知（アプリ内通知/メール連携）
 
 ---
 

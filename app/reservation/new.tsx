@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -13,8 +13,10 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, CalendarDays, Clock3, UserRound, Building2 } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
+import { Facility } from '@/constants/facilities';
 import { useAuth } from '@/lib/AuthContext';
-import { createReservation, getFacilityByRouteId } from '@/lib/reservationService';
+import { fetchFacilityById } from '@/lib/facilityCatalogService';
+import { createReservation } from '@/lib/reservationService';
 import { ReservationType } from '@/types/reservation';
 
 const RESERVATION_TYPES: ReservationType[] = ['一時預かり', '見学', '相談'];
@@ -31,7 +33,7 @@ function formatTomorrow() {
 export default function ReservationCreateScreen() {
   const { facilityId } = useLocalSearchParams();
   const { user } = useAuth();
-  const facility = getFacilityByRouteId(facilityId);
+  const routeFacilityId = Array.isArray(facilityId) ? facilityId[0] : facilityId;
 
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedChildId, setSelectedChildId] = useState(user?.children?.[0]?.id || '');
@@ -42,13 +44,54 @@ export default function ReservationCreateScreen() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [facility, setFacility] = useState<Facility | null>(null);
+  const [isFacilityLoading, setIsFacilityLoading] = useState(true);
+  const [facilityLoadError, setFacilityLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFacility = async () => {
+      if (!routeFacilityId || typeof routeFacilityId !== 'string') {
+        if (!isMounted) return;
+        setFacility(null);
+        setIsFacilityLoading(false);
+        return;
+      }
+
+      setIsFacilityLoading(true);
+      setFacilityLoadError(null);
+
+      try {
+        const foundFacility = await fetchFacilityById(routeFacilityId);
+        if (!isMounted) return;
+        setFacility(foundFacility);
+      } catch (error) {
+        if (!isMounted) return;
+        setFacility(null);
+        setFacilityLoadError(
+          error instanceof Error ? error.message : '施設情報の取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsFacilityLoading(false);
+        }
+      }
+    };
+
+    loadFacility();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeFacilityId]);
 
   const selectedChild = useMemo(
     () => user?.children?.find((child) => child.id === selectedChildId),
     [selectedChildId, user?.children]
   );
 
-  const canReserve = !!facility && !!user && !!selectedChild;
+  const canReserve = !!facility && !!user && !!selectedChild && !isFacilityLoading;
 
   const validateForm = () => {
     if (!facility) {
@@ -133,11 +176,23 @@ export default function ReservationCreateScreen() {
     }
   };
 
+  if (isFacilityLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorState}>
+          <Text style={styles.errorTitle}>施設情報を読み込み中です</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!facility) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorState}>
-          <Text style={styles.errorTitle}>施設情報が見つかりませんでした</Text>
+          <Text style={styles.errorTitle}>
+            {facilityLoadError || '施設情報が見つかりませんでした'}
+          </Text>
           <TouchableOpacity style={styles.primaryButton} onPress={() => router.back()}>
             <Text style={styles.primaryButtonText}>戻る</Text>
           </TouchableOpacity>

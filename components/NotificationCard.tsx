@@ -1,36 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Bell, MessageCircle, Calendar } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
 
-interface Notification {
+export interface NotificationItem {
   id: string;
   type: 'message' | 'reminder' | 'info';
   title: string;
   description: string;
-  time: string;
   isUnread?: boolean;
+  createdAt: string;
 }
-
-const sampleNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'message',
-    title: 'さくら保育園から返信',
-    description: '予約内容の確認が完了しました',
-    time: '10分前',
-    isUnread: true,
-  },
-  {
-    id: '2',
-    type: 'reminder',
-    title: '明日の予約リマインダー',
-    description: '明日10:00 さくら保育園',
-    time: '1時間前',
-    isUnread: true,
-  },
-];
 
 const getIcon = (type: string) => {
   switch (type) {
@@ -54,21 +35,43 @@ const getIconColor = (type: string) => {
   }
 };
 
+function formatRelativeTime(createdAt: string) {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diffMs < minute) return 'たった今';
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)}分前`;
+  if (diffMs < day) return `${Math.floor(diffMs / hour)}時間前`;
+  if (diffMs < 7 * day) return `${Math.floor(diffMs / day)}日前`;
+
+  return date.toLocaleDateString('ja-JP', {
+    month: 'numeric',
+    day: 'numeric',
+  });
+}
+
 interface NotificationCardProps {
+  notifications?: NotificationItem[];
+  isLoading?: boolean;
   onNotificationPress?: (notificationId: string) => void;
   onSeeAllPress?: () => void;
 }
 
 export default function NotificationCard({
+  notifications = [],
+  isLoading = false,
   onNotificationPress,
   onSeeAllPress,
 }: NotificationCardProps) {
   const { horizontalPadding, isDesktop, maxContentWidth } = useResponsive();
-  const unreadCount = sampleNotifications.filter((n) => n.isUnread).length;
-
-  if (sampleNotifications.length === 0) {
-    return null;
-  }
+  const unreadCount = notifications.filter((n) => n.isUnread).length;
 
   const containerStyle = [
     styles.container,
@@ -101,7 +104,12 @@ export default function NotificationCard({
       </View>
 
       <View style={styles.notificationList}>
-        {sampleNotifications.slice(0, 2).map((notification) => {
+        {isLoading ? (
+          <Text style={styles.emptyText}>読み込み中...</Text>
+        ) : notifications.length === 0 ? (
+          <Text style={styles.emptyText}>通知はまだありません</Text>
+        ) : (
+          notifications.slice(0, 2).map((notification) => {
           const Icon = getIcon(notification.type);
           const iconColor = getIconColor(notification.type);
 
@@ -122,7 +130,9 @@ export default function NotificationCard({
               <View style={styles.notificationContent}>
                 <View style={styles.notificationHeader}>
                   <Text style={styles.notificationTitle}>{notification.title}</Text>
-                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                  <Text style={styles.notificationTime}>
+                    {formatRelativeTime(notification.createdAt)}
+                  </Text>
                 </View>
                 <Text style={styles.notificationDescription}>
                   {notification.description}
@@ -132,7 +142,8 @@ export default function NotificationCard({
               {notification.isUnread && <View style={styles.unreadDot} />}
             </TouchableOpacity>
           );
-        })}
+          })
+        )}
       </View>
     </View>
   );
@@ -185,6 +196,11 @@ const styles = StyleSheet.create({
   },
   notificationList: {
     gap: 8,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: colors.textSub,
+    paddingVertical: 8,
   },
   notificationItem: {
     flexDirection: 'row',

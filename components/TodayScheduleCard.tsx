@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Calendar, Clock, ChevronRight } from 'lucide-react-native';
 import { colors } from '../constants/colors';
 import { useResponsive } from '../hooks/useResponsive';
 

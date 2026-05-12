@@ -1,14 +1,89 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, useRouter, usePathname } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { LayoutDashboard, Calendar, Building2, Settings } from 'lucide-react-native';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useAuth } from '../../lib/AuthContext';
+import { fetchFacilityIdsForStaffUser } from '../../lib/reservationService';
 
 export default function FacilityTabsLayout() {
   const { isTablet } = useResponsive();
   const router = useRouter();
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
+  const [isAccessChecking, setIsAccessChecking] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const verifyFacilityAccess = async () => {
+      if (isLoading) return;
+
+      const userId = user?.id;
+      if (!userId) {
+        if (!isMounted) return;
+        setAccessError(null);
+        setIsAccessChecking(false);
+        router.replace('/facility-login' as any);
+        return;
+      }
+
+      setIsAccessChecking(true);
+      setAccessError(null);
+
+      try {
+        const facilityIds = await fetchFacilityIdsForStaffUser(userId);
+        if (!isMounted) return;
+
+        if (facilityIds.length === 0) {
+          setAccessError('このアカウントは施設管理者として未登録です。');
+          setIsAccessChecking(false);
+          router.replace('/facility-login' as any);
+          return;
+        }
+
+        setIsAccessChecking(false);
+      } catch (error) {
+        if (!isMounted) return;
+        setAccessError(
+          error instanceof Error ? error.message : '施設アクセス権の確認に失敗しました。'
+        );
+        setIsAccessChecking(false);
+      }
+    };
+
+    void verifyFacilityAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoading, router, user?.id]);
+
+  if (isLoading || isAccessChecking || !user) {
+    return (
+      <View style={styles.stateContainer}>
+        <ActivityIndicator size="large" color={facilityColors.primary} />
+        <Text style={styles.stateText}>施設アカウント情報を確認しています...</Text>
+      </View>
+    );
+  }
+
+  if (accessError) {
+    return (
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateText}>{accessError}</Text>
+        <TouchableOpacity
+          style={styles.stateActionButton}
+          onPress={() => router.replace('/facility-login' as any)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.stateActionText}>施設ログインへ戻る</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   // Web版用のヘッダー
   const FacilityHeader = () => {
@@ -201,6 +276,30 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
   },
+  stateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: facilityColors.background,
+  },
+  stateText: {
+    fontSize: 14,
+    color: facilityColors.textSub,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  stateActionButton: {
+    backgroundColor: facilityColors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  stateActionText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   contentContainer: {
     flex: 1,
   },
@@ -268,7 +367,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sideNavItemActive: {
-    backgroundColor: facilityColors.primarySoft,
+    backgroundColor: `${facilityColors.primary}15`,
   },
   sideNavLabel: {
     fontSize: 15,

@@ -1,13 +1,14 @@
 import { Platform } from 'react-native';
 import { ApplicationData } from './pdfGenerator';
 import { loadPdfMapping } from './pdfMappingStorage';
+import { AssetLike, resolveAssetUri, triggerBrowserDownload } from './downloadHelpers';
 
 /**
  * マッピング設定を使ってPDFに自動入力
  * Web版のみ対応
  */
 export async function autoFillPDF(
-  templatePath: string,
+  templatePath: AssetLike,
   templateName: string,
   data: ApplicationData
 ): Promise<Blob | null> {
@@ -27,7 +28,11 @@ export async function autoFillPDF(
     }
 
     // テンプレートPDFを読み込み
-    const templateResponse = await fetch(templatePath);
+    const templateUri = resolveAssetUri(templatePath);
+    const templateResponse = await fetch(templateUri);
+    if (!templateResponse.ok) {
+      throw new Error(`テンプレートPDFの取得に失敗しました (${templateResponse.status})`);
+    }
     const templateBytes = await templateResponse.arrayBuffer();
     const pdfDoc = await PDFDocument.load(templateBytes);
 
@@ -54,7 +59,7 @@ export async function autoFillPDF(
 
     // PDF生成
     const pdfBytes = await pdfDoc.save();
-    return new Blob([pdfBytes], { type: 'application/pdf' });
+    return new Blob([Uint8Array.from(pdfBytes)], { type: 'application/pdf' });
   } catch (error) {
     console.error('PDF auto-fill failed:', error);
     throw error;
@@ -65,7 +70,7 @@ export async function autoFillPDF(
  * 自動入力済みPDFをダウンロード
  */
 export async function downloadAutoFilledPDF(
-  templatePath: string,
+  templatePath: AssetLike,
   templateName: string,
   data: ApplicationData,
   filename: string
@@ -77,10 +82,5 @@ export async function downloadAutoFilledPDF(
   }
 
   // ダウンロード
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+  triggerBrowserDownload(blob, filename);
 }

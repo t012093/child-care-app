@@ -87,6 +87,7 @@ const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
 };
 
+export const DEMO_ENABLED = process.env.EXPO_PUBLIC_ENABLE_DEMO === 'true';
 const DEMO_EMAIL = 'demo@example.com';
 const DEMO_PASSWORD = 'demo123';
 const DEMO_AUTH_TOKEN = 'mock_token';
@@ -447,7 +448,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isMounted) {
             setUser(nextUser);
           }
-        } else {
+        } else if (DEMO_ENABLED) {
           const demoUser = await loadDemoUserFromStorage();
           if (isMounted) {
             setUser(demoUser);
@@ -479,7 +480,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(nextUser);
             }
             await clearDemoState();
-          } else {
+          } else if (DEMO_ENABLED) {
             const demoUser = await loadDemoUserFromStorage();
             if (isMounted) {
               setUser(demoUser);
@@ -504,7 +505,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+      if (DEMO_ENABLED && email === DEMO_EMAIL && password === DEMO_PASSWORD) {
         await setDemoState();
         setUser(DEMO_USER);
         return;
@@ -530,8 +531,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (userData: RegisterInput) => {
-    const email = userData.email.trim();
-    const password = userData.password.trim();
+    const email = typeof userData.email === 'string' ? userData.email.trim() : '';
+    const password = typeof userData.password === 'string' ? userData.password.trim() : '';
+
+    if (!email || !password) {
+      throw new Error('登録情報が不足しています。最初から入力し直してください。');
+    }
 
     try {
       const metadata = {

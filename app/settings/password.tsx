@@ -12,6 +12,8 @@ import {
 import { ChevronLeft, Eye, EyeOff, Lock, CheckCircle, XCircle } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useRouter, Stack } from 'expo-router';
+import { useAuth } from '../../lib/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface PasswordStrength {
   score: number;
@@ -21,6 +23,7 @@ interface PasswordStrength {
 
 export default function PasswordChangeScreen() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -48,6 +51,28 @@ export default function PasswordChangeScreen() {
   };
 
   const passwordStrength = getPasswordStrength(newPassword);
+
+  const mapPasswordError = (message: string) => {
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes('invalid login credentials')) {
+      return '現在のパスワードが正しくありません。';
+    }
+
+    if (normalized.includes('new password should be different')) {
+      return '新しいパスワードは現在のパスワードと異なるものを設定してください。';
+    }
+
+    if (normalized.includes('password should be at least')) {
+      return 'パスワードは8文字以上で入力してください。';
+    }
+
+    if (normalized.includes('same password')) {
+      return '新しいパスワードは現在のパスワードと異なるものを設定してください。';
+    }
+
+    return message;
+  };
 
   const validatePassword = (): boolean => {
     if (!currentPassword) {
@@ -80,12 +105,36 @@ export default function PasswordChangeScreen() {
 
   const handleChangePassword = async () => {
     if (!validatePassword()) return;
+    if (!user?.email) {
+      Alert.alert('エラー', 'ログイン情報を確認できませんでした。再ログイン後にお試しください。');
+      return;
+    }
+    if (user.id === 'demo-user') {
+      Alert.alert('変更不可', 'ゲストユーザーのパスワードは変更できません。');
+      return;
+    }
 
     setIsSaving(true);
 
     try {
-      // TODO: 実際のAPI呼び出し
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (signInError) {
+        throw new Error(mapPasswordError(signInError.message || '現在のパスワード確認に失敗しました。'));
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        throw new Error(mapPasswordError(updateError.message || 'パスワードの変更に失敗しました。'));
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
 
       Alert.alert(
         'パスワード変更完了',
@@ -93,7 +142,10 @@ export default function PasswordChangeScreen() {
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
-      Alert.alert('エラー', 'パスワードの変更に失敗しました');
+      Alert.alert(
+        'エラー',
+        error instanceof Error ? mapPasswordError(error.message) : 'パスワードの変更に失敗しました'
+      );
     } finally {
       setIsSaving(false);
     }
@@ -253,7 +305,7 @@ export default function PasswordChangeScreen() {
 
           {/* 変更ボタン */}
           <TouchableOpacity
-            style={styles.changeButton}
+            style={[styles.changeButton, isSaving && styles.disabledButton]}
             onPress={handleChangePassword}
             disabled={isSaving}
             activeOpacity={0.7}
@@ -382,6 +434,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.surface,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   footer: {
     height: 40,

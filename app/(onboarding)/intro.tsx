@@ -4,17 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   SafeAreaView,
-  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/constants/colors';
 import { Home, Users, Shield, Sparkles } from 'lucide-react-native';
-
-const { width } = Dimensions.get('window');
 
 const onboardingData = [
   {

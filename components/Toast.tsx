@@ -5,9 +5,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react-native';
+import { CheckCircle, AlertCircle, Info } from 'lucide-react-native';
 import { facilityColors } from '../constants/colors';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -88,7 +87,7 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
     }, (toast.duration || 3000) - 300);
 
     return () => clearTimeout(hideTimer);
-  }, []);
+  }, [opacity, toast.duration, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

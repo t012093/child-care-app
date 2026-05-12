@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,40 +8,175 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Building2, MapPin, Phone, Clock, Users, ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { facilityColors } from '../../constants/colors';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useAuth } from '../../lib/AuthContext';
+import {
+  FacilityProfile,
+  fetchFacilityProfileForUser,
+  updateFacilityProfile,
+} from '../../lib/facilityService';
 
 export default function FacilityInfoScreen() {
   const { horizontalPadding, isDesktop, maxContentWidth, isTablet } = useResponsive();
   const router = useRouter();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [facilityId, setFacilityId] = useState<string | null>(null);
+  const [facilityEmail, setFacilityEmail] = useState('');
+  const [latestProfile, setLatestProfile] = useState<FacilityProfile | null>(null);
 
   // フォームの状態
-  const [facilityName, setFacilityName] = useState('さくら保育園');
-  const [address, setAddress] = useState('東京都渋谷区〇〇1-2-3');
-  const [phoneNumber, setPhoneNumber] = useState('03-1234-5678');
-  const [openingHours, setOpeningHours] = useState('平日 9:00-18:00');
-  const [capacity, setCapacity] = useState('20');
+  const [facilityName, setFacilityName] = useState('');
+  const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [openingHoursWeekday, setOpeningHoursWeekday] = useState('');
+  const [openingHoursSaturday, setOpeningHoursSaturday] = useState('');
+  const [capacity, setCapacity] = useState('');
 
-  const handleSave = () => {
-    Alert.alert('保存完了', '施設情報を更新しました。');
+  const applyProfileToForm = (profile: FacilityProfile) => {
+    setFacilityId(profile.id);
+    setFacilityName(profile.name);
+    setAddress(profile.address);
+    setPhoneNumber(profile.phone);
+    setFacilityEmail(profile.email);
+    setOpeningHoursWeekday(profile.openingHoursWeekday);
+    setOpeningHoursSaturday(profile.openingHoursSaturday);
+    setCapacity(profile.capacity === null ? '' : String(profile.capacity));
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFacilityProfile = async () => {
+      if (!user) {
+        if (!isMounted) return;
+        setLoadError('施設アカウントでログインしてください。');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const profile = await fetchFacilityProfileForUser(user.id);
+        if (!isMounted) return;
+        setLatestProfile(profile);
+        applyProfileToForm(profile);
+      } catch (error) {
+        if (!isMounted) return;
+        setLoadError(
+          error instanceof Error ? error.message : '施設情報の取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadFacilityProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!facilityId) {
+      Alert.alert('保存エラー', '施設情報を取得できないため保存できません。');
+      return;
+    }
+
+    if (!facilityName.trim()) {
+      Alert.alert('入力エラー', '施設名を入力してください。');
+      return;
+    }
+
+    if (!address.trim()) {
+      Alert.alert('入力エラー', '住所を入力してください。');
+      return;
+    }
+
+    const normalizedCapacity = capacity.trim();
+    let capacityValue: number | null = null;
+    if (normalizedCapacity) {
+      if (!/^\d+$/.test(normalizedCapacity)) {
+        Alert.alert('入力エラー', '定員は0以上の整数で入力してください。');
+        return;
+      }
+      capacityValue = Number(normalizedCapacity);
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedProfile = await updateFacilityProfile(facilityId, {
+        name: facilityName,
+        address,
+        phone: phoneNumber,
+        openingHoursWeekday,
+        openingHoursSaturday,
+        capacity: capacityValue,
+      });
+
+      setLatestProfile(updatedProfile);
+      applyProfileToForm(updatedProfile);
+      setIsEditing(false);
+      Alert.alert('保存完了', '施設情報を更新しました。');
+    } catch (error) {
+      Alert.alert(
+        '保存エラー',
+        error instanceof Error ? error.message : '施設情報の更新に失敗しました。'
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (latestProfile) {
+      applyProfileToForm(latestProfile);
+    }
     setIsEditing(false);
+  };
+
+  const handleRetryLoad = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const profile = await fetchFacilityProfileForUser(user.id);
+      setLatestProfile(profile);
+      applyProfileToForm(profile);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : '施設情報の取得に失敗しました。'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const containerStyle = {
     paddingHorizontal: horizontalPadding,
   };
 
-  const contentStyle = [
-    isDesktop && {
-      maxWidth: maxContentWidth,
-      alignSelf: 'center',
-      width: '100%',
-    },
-  ];
+  const desktopContentStyle = isDesktop
+    ? {
+        maxWidth: maxContentWidth,
+        alignSelf: 'center' as const,
+        width: '100%' as const,
+      }
+    : undefined;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,17 +200,50 @@ export default function FacilityInfoScreen() {
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => setIsEditing(true)}
+            disabled={isLoading || Boolean(loadError)}
           >
             <Text style={styles.editButtonText}>編集</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[containerStyle, contentStyle]}
-      >
+      {isLoading ? (
+        <View style={styles.stateContainer}>
+          <ActivityIndicator size="large" color={facilityColors.primary} />
+          <Text style={styles.stateText}>施設情報を読み込み中です...</Text>
+        </View>
+      ) : loadError ? (
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateErrorTitle}>施設情報の取得に失敗しました</Text>
+          <Text style={styles.stateText}>{loadError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleRetryLoad}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryButtonText}>再読み込み</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[containerStyle, desktopContentStyle]}
+        >
         <View style={styles.formSection}>
+          {/* ログインメール */}
+          <View style={styles.inputContainer}>
+            <View style={styles.inputLabel}>
+              <Phone size={20} color={facilityColors.textSub} />
+              <Text style={styles.labelText}>ログインメール</Text>
+            </View>
+            <TextInput
+              style={[styles.input, styles.inputDisabled]}
+              value={facilityEmail}
+              editable={false}
+              placeholderTextColor={facilityColors.textSub}
+            />
+          </View>
+
           {/* 施設名 */}
           <View style={styles.inputContainer}>
             <View style={styles.inputLabel}>
@@ -86,7 +254,7 @@ export default function FacilityInfoScreen() {
               style={[styles.input, !isEditing && styles.inputDisabled]}
               value={facilityName}
               onChangeText={setFacilityName}
-              editable={isEditing}
+              editable={isEditing && !isSaving}
               placeholder="施設名を入力"
               placeholderTextColor={facilityColors.textSub}
             />
@@ -102,7 +270,7 @@ export default function FacilityInfoScreen() {
               style={[styles.input, !isEditing && styles.inputDisabled]}
               value={address}
               onChangeText={setAddress}
-              editable={isEditing}
+              editable={isEditing && !isSaving}
               placeholder="住所を入力"
               placeholderTextColor={facilityColors.textSub}
               multiline
@@ -119,25 +287,41 @@ export default function FacilityInfoScreen() {
               style={[styles.input, !isEditing && styles.inputDisabled]}
               value={phoneNumber}
               onChangeText={setPhoneNumber}
-              editable={isEditing}
+              editable={isEditing && !isSaving}
               placeholder="電話番号を入力"
               placeholderTextColor={facilityColors.textSub}
               keyboardType="phone-pad"
             />
           </View>
 
-          {/* 営業時間 */}
+          {/* 営業時間（平日） */}
           <View style={styles.inputContainer}>
             <View style={styles.inputLabel}>
               <Clock size={20} color={facilityColors.textSub} />
-              <Text style={styles.labelText}>営業時間</Text>
+              <Text style={styles.labelText}>営業時間（平日）</Text>
             </View>
             <TextInput
               style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={openingHours}
-              onChangeText={setOpeningHours}
-              editable={isEditing}
-              placeholder="営業時間を入力"
+              value={openingHoursWeekday}
+              onChangeText={setOpeningHoursWeekday}
+              editable={isEditing && !isSaving}
+              placeholder="例: 08:00-18:00"
+              placeholderTextColor={facilityColors.textSub}
+            />
+          </View>
+
+          {/* 営業時間（土曜） */}
+          <View style={styles.inputContainer}>
+            <View style={styles.inputLabel}>
+              <Clock size={20} color={facilityColors.textSub} />
+              <Text style={styles.labelText}>営業時間（土曜）</Text>
+            </View>
+            <TextInput
+              style={[styles.input, !isEditing && styles.inputDisabled]}
+              value={openingHoursSaturday}
+              onChangeText={setOpeningHoursSaturday}
+              editable={isEditing && !isSaving}
+              placeholder="例: 08:00-18:00 / 未実施"
               placeholderTextColor={facilityColors.textSub}
             />
           </View>
@@ -152,7 +336,7 @@ export default function FacilityInfoScreen() {
               style={[styles.input, !isEditing && styles.inputDisabled]}
               value={capacity}
               onChangeText={setCapacity}
-              editable={isEditing}
+              editable={isEditing && !isSaving}
               placeholder="定員を入力"
               placeholderTextColor={facilityColors.textSub}
               keyboardType="number-pad"
@@ -164,22 +348,27 @@ export default function FacilityInfoScreen() {
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => setIsEditing(false)}
+              onPress={handleCancelEdit}
+              disabled={isSaving}
             >
               <Text style={styles.cancelButtonText}>キャンセル</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+              disabled={isSaving}
               onPress={handleSave}
             >
-              <Text style={styles.saveButtonText}>保存</Text>
+              <Text style={styles.saveButtonText}>
+                {isSaving ? '保存中...' : '保存'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
 
         <View style={styles.footer} />
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -188,6 +377,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: facilityColors.background,
+  },
+  stateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  stateErrorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: facilityColors.textMain,
+    textAlign: 'center',
+  },
+  stateText: {
+    fontSize: 14,
+    color: facilityColors.textSub,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryButton: {
+    marginTop: 4,
+    backgroundColor: facilityColors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   header: {
     backgroundColor: facilityColors.surface,
@@ -297,6 +517,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
   },
   saveButtonText: {
     fontSize: 16,

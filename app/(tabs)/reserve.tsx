@@ -1,17 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Dimensions, Platform, Modal } from 'react-native';
 import SearchBar from '../../components/SearchBar';
 import FacilityListItem from '../../components/FacilityListItem';
 import FacilityMap from '../../components/FacilityMap';
 import FacilityFilter, { FilterOptions } from '../../components/FacilityFilter';
 import { colors } from '../../constants/colors';
-import { sampleFacilities, filterFacilities } from '../../constants/facilities';
+import { Facility, filterFacilities } from '../../constants/facilities';
 import { useAuth } from '../../lib/AuthContext';
 import {
   getFacilityMapViewportForAddress,
   getFacilityMapViewportForFacilities,
 } from '../../lib/facilityMapViewport';
 import { FileSliders as Sliders, X, ArrowUpDown } from 'lucide-react-native';
+import { fetchPublicFacilities } from '../../lib/facilityCatalogService';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -31,30 +32,91 @@ export default function ReserveScreen() {
   });
   const [sortBy, setSortBy] = useState<SortOption>('distance');
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [isLoadingFacilities, setIsLoadingFacilities] = useState(true);
+  const [facilityLoadError, setFacilityLoadError] = useState<string | null>(null);
 
   const isWeb = Platform.OS === 'web';
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFacilities = async () => {
+      setIsLoadingFacilities(true);
+      setFacilityLoadError(null);
+
+      try {
+        const nextFacilities = await fetchPublicFacilities();
+        if (!isMounted) return;
+        setFacilities(nextFacilities);
+      } catch (error) {
+        if (!isMounted) return;
+        setFacilities([]);
+        setFacilityLoadError(
+          error instanceof Error ? error.message : '施設一覧の取得に失敗しました。'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingFacilities(false);
+        }
+      }
+    };
+
+    loadFacilities();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filters, sortBy, searchQuery]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
   // フィルタリング&ソートされた施設リスト（全件）
   const filteredAndSortedFacilities = useMemo(() => {
-    const filtered = filterFacilities(sampleFacilities, filters);
+    const filtered = filterFacilities(facilities, filters);
+    const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+    const searched = normalizedSearchQuery.length > 0
+      ? filtered.filter((facility) =>
+          facility.name.toLowerCase().includes(normalizedSearchQuery) ||
+          facility.address.toLowerCase().includes(normalizedSearchQuery) ||
+          facility.provider?.toLowerCase().includes(normalizedSearchQuery)
+        )
+      : filtered;
 
     // ソート処理
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = [...searched].sort((a, b) => {
       switch (sortBy) {
         case 'distance':
           return (a.distance || 0) - (b.distance || 0);
         case 'rating':
           return b.rating - a.rating;
-        case 'newest':
-          // IDが大きいほど新しいと仮定
-          return b.id.localeCompare(a.id);
+        case 'newest': {
+          const left = Number.isFinite(Date.parse(a.createdAt || ''))
+            ? Date.parse(a.createdAt || '')
+            : 0;
+          const right = Number.isFinite(Date.parse(b.createdAt || ''))
+            ? Date.parse(b.createdAt || '')
+            : 0;
+          return right - left;
+        }
         default:
           return 0;
       }
     });
 
     return sorted;
-  }, [filters, sortBy]);
+  }, [facilities, filters, sortBy, searchQuery]);
 
   // 表示用リスト（ページネーション適用）
   const displayedFacilities = useMemo(() => {
@@ -83,8 +145,8 @@ export default function ReserveScreen() {
     (filters.capacityRange !== null ? 1 : 0);
 
   const userRegionViewport = useMemo(
-    () => getFacilityMapViewportForAddress(user?.parentInfo?.address, sampleFacilities),
-    [user?.parentInfo?.address]
+    () => getFacilityMapViewportForAddress(user?.parentInfo?.address, facilities),
+    [user?.parentInfo?.address, facilities]
   );
 
   const filteredViewport = useMemo(
@@ -107,6 +169,10 @@ export default function ReserveScreen() {
 
   // ページネーションフッター
   const renderFooter = () => {
+    if (isLoadingFacilities || filteredAndSortedFacilities.length === 0) {
+      return null;
+    }
+
     const hasMore = displayCount < filteredAndSortedFacilities.length;
     const showReset = displayCount > ITEMS_PER_PAGE;
 
@@ -154,6 +220,39 @@ export default function ReserveScreen() {
     }
   };
 
+  const listSubtitle = isLoadingFacilities
+    ? '施設情報を読み込み中です...'
+    : facilityLoadError
+      ? '施設情報の取得に失敗しました'
+      : `${filteredAndSortedFacilities.length}件見つかりました`;
+
+  const renderEmptyState = () => {
+    if (isLoadingFacilities) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>施設情報を読み込み中です</Text>
+          <Text style={styles.emptyStateDescription}>しばらくお待ちください</Text>
+        </View>
+      );
+    }
+
+    if (facilityLoadError) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>施設一覧の取得に失敗しました</Text>
+          <Text style={styles.emptyStateDescription}>{facilityLoadError}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyStateTitle}>条件に一致する施設がありません</Text>
+        <Text style={styles.emptyStateDescription}>検索条件やフィルターを調整してください</Text>
+      </View>
+    );
+  };
+
   // ヘッダーコンポーネント（マップと検索バー）
   const ListHeaderComponent = () => (
     <>
@@ -162,7 +261,12 @@ export default function ReserveScreen() {
       </View>
 
       <View style={styles.searchContainer}>
-        <SearchBar placeholder="施設名、住所で検索" />
+        <SearchBar
+          placeholder="施設名、住所で検索"
+          value={searchQuery}
+          onChangeText={handleSearch}
+          onClear={handleClearSearch}
+        />
 
         <TouchableOpacity
           style={styles.filterChip}
@@ -190,7 +294,7 @@ export default function ReserveScreen() {
       <View style={[styles.listHeader, isWeb && styles.listHeaderWeb]}>
         <View>
           <Text style={styles.listTitle}>近くの施設</Text>
-          <Text style={styles.listSubtitle}>{filteredAndSortedFacilities.length}件見つかりました</Text>
+          <Text style={styles.listSubtitle}>{listSubtitle}</Text>
         </View>
         <TouchableOpacity
           style={styles.sortButton}
@@ -217,6 +321,7 @@ export default function ReserveScreen() {
         removeClippedSubviews={!isWeb}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContentContainer}
+        ListEmptyComponent={renderEmptyState}
       />
 
       {/* フィルターモーダル */}
@@ -378,6 +483,27 @@ const styles = StyleSheet.create({
   listSubtitle: {
     fontSize: 14,
     color: colors.textSub,
+  },
+  emptyState: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    padding: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textMain,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    marginTop: 8,
+    fontSize: 14,
+    color: colors.textSub,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   paginationFooter: {
     paddingVertical: 24,
